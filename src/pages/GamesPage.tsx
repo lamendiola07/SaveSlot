@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 import { useSearchStore } from '../store'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { ALL_GAMES } from '../data/games'
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { useGames } from '../hooks/useGames'
 
 const GAMES_PER_PAGE = 8
 
@@ -11,18 +12,16 @@ export function GamesPage() {
   const query = useSearchStore(state => state.query)
   const [currentPage, setCurrentPage] = useState(1)
   
-  const filteredGames = useMemo(() => {
-    return ALL_GAMES.filter(game => 
-      game.title.toLowerCase().includes(query.toLowerCase()) ||
-      game.tags.some(tag => tag.toLowerCase().includes(query.toLowerCase()))
-    )
-  }, [query])
+  const { games, loading, error, totalCount } = useGames({ 
+    query, 
+    page: currentPage, 
+    pageSize: GAMES_PER_PAGE 
+  })
 
-  const totalPages = Math.ceil(filteredGames.length / GAMES_PER_PAGE)
-  const paginatedGames = filteredGames.slice((currentPage - 1) * GAMES_PER_PAGE, currentPage * GAMES_PER_PAGE)
+  const totalPages = Math.ceil(totalCount / GAMES_PER_PAGE)
 
   const goToPage = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
+    if (page >= 1 && (totalPages === 0 || page <= totalPages)) {
       setCurrentPage(page)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
@@ -34,27 +33,46 @@ export function GamesPage() {
       <main className="max-w-[1440px] mx-auto px-12 py-16">
         <div className="flex justify-between items-center mb-12">
           <h1 className="font-roboto text-5xl text-white">BROWSE GAMES</h1>
-          <p className="text-white font-roboto">Showing {filteredGames.length} results</p>
+          <p className="text-white font-roboto">
+            {loading ? 'Fetching games...' : `Showing ${totalCount} results`}
+          </p>
         </div>
 
-        {paginatedGames.length > 0 ? (
+        {error && (
+          <div className="text-center py-20 bg-red-500/10 border border-red-500/20 rounded-3xl">
+            <p className="text-red-500 font-roboto text-xl">{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="mt-4 px-6 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-32 text-white/40">
+            <Loader2 className="w-12 h-12 animate-spin mb-4" />
+            <p className="font-roboto text-2xl">Loading the latest games...</p>
+          </div>
+        ) : games.length > 0 ? (
           <>
             <div className="grid grid-cols-4 gap-8">
-              {paginatedGames.map((game) => (
-                <div key={game.id} className="group cursor-pointer">
+              {games.map((game) => (
+                <Link to={`/game/${game.id}`} key={game.id} className="group cursor-pointer">
                   <div className="bg-white/10 rounded-2xl overflow-hidden aspect-[3/4] border border-white/10 group-hover:border-white transition-all shadow-xl">
                     <img src={game.img} alt={game.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   </div>
                   <div className="mt-4">
-                    <h3 className="font-roboto text-xl text-white">{game.title}</h3>
-                    <div className="flex gap-2 mt-1">
-                      {game.tags.map(tag => (
-                        <span key={tag} className="text-xs bg-black/20 text-white/60 px-2 py-0.5 rounded-full">{tag}</span>
+                    <h3 className="font-roboto text-xl text-white truncate">{game.title}</h3>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {game.tags.slice(0, 3).map(tag => (
+                        <span key={tag} className="text-[10px] bg-black/20 text-white/60 px-2 py-0.5 rounded-full whitespace-nowrap">{tag}</span>
                       ))}
                     </div>
                     <p className="font-roboto text-white/80 mt-2">{game.price}</p>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
 
@@ -71,11 +89,12 @@ export function GamesPage() {
                 
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let pageNum = i + 1
-                  // Basic windowing for pagination if many pages
                   if (totalPages > 5 && currentPage > 3) {
-                    pageNum = currentPage - 3 + i + 1
-                    if (pageNum > totalPages) pageNum = totalPages - (4 - i)
+                    pageNum = currentPage - 2 + i
+                    if (pageNum + (4 - i) > totalPages) pageNum = totalPages - (4 - i)
                   }
+                  if (pageNum < 1) pageNum = i + 1
+                  if (pageNum > totalPages) return null
                   
                   return (
                     <button
@@ -118,3 +137,4 @@ export function GamesPage() {
     </div>
   )
 }
+

@@ -1,19 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 import { Sidebar } from '../components/Sidebar'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-
-import { ALL_GAMES } from '../data/games'
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { useGames } from '../hooks/useGames'
 
 const BACKGROUNDS = [
   'https://www.figma.com/api/mcp/asset/b43ca7e4-f677-4796-8378-ee5d25b13689', // Minecraft
   'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070&auto=format&fit=crop', // Gaming setup
   'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=2071&auto=format&fit=crop', // Abstract gaming
 ]
-
-const UPCOMING_DATA = ALL_GAMES.slice(0, 8)
-const POPULAR_GAMES = ALL_GAMES.filter(g => [5, 6].includes(g.id))
 
 function Pagination({ activePage, totalPages, onPageChange }: { activePage: number; totalPages: number; onPageChange: (p: number) => void }) {
   return (
@@ -49,9 +46,9 @@ const whatYouCanDoCards = [
   { id: 6, title: 'Live Events', description: 'Join exclusive community tournaments.', color: 'bg-orange-400' },
 ]
 
-function GameCard({ title, price, img }: { title: string; price: string; img: string }) {
+function GameCard({ id, title, price, img }: { id: number; title: string; price: string; img: string }) {
   return (
-    <div className="flex flex-col gap-3 flex-1 min-w-0 group cursor-pointer">
+    <Link to={`/game/${id}`} className="flex flex-col gap-3 flex-1 min-w-0 group cursor-pointer">
       <div className="bg-[#eee] border-2 border-black/80 rounded overflow-hidden h-[336px] flex items-center justify-center shrink-0 group-hover:border-white transition-all">
         <img src={img} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
       </div>
@@ -59,7 +56,7 @@ function GameCard({ title, price, img }: { title: string; price: string; img: st
         <span className="overflow-hidden text-ellipsis whitespace-nowrap group-hover:text-white/80">{title}</span>
         <span>{price}</span>
       </div>
-    </div>
+    </Link>
   )
 }
 
@@ -69,8 +66,20 @@ export function StartupPage() {
   const sliderRef = useRef<HTMLDivElement>(null)
 
   const itemsPerPage = 4
-  const totalUpcomingPages = Math.ceil(UPCOMING_DATA.length / itemsPerPage)
-  const currentUpcoming = UPCOMING_DATA.slice((upcomingPage - 1) * itemsPerPage, upcomingPage * itemsPerPage)
+  
+  const { games: upcomingGames, loading: loadingUpcoming, totalCount: totalUpcoming } = useGames({
+    page: upcomingPage,
+    pageSize: itemsPerPage,
+    ordering: '-released',
+    dates: `2024-01-01,2026-12-31`
+  })
+
+  const { games: popularGames, loading: loadingPopular } = useGames({
+    pageSize: 2,
+    ordering: '-metacritic'
+  })
+
+  const totalUpcomingPages = Math.min(5, Math.ceil(totalUpcoming / itemsPerPage))
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -139,11 +148,19 @@ export function StartupPage() {
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
-        <div className="grid grid-cols-4 gap-8 h-[400px]">
-          {currentUpcoming.map((game) => (
-            <GameCard key={game.id} title={game.title} price={game.price} img={game.img} />
-          ))}
-        </div>
+        
+        {loadingUpcoming ? (
+          <div className="h-[400px] flex items-center justify-center text-white/40">
+            <Loader2 className="w-10 h-10 animate-spin" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-8 h-[400px]">
+            {upcomingGames.map((game) => (
+              <GameCard key={game.id} id={game.id} title={game.title} price={game.price} img={game.img} />
+            ))}
+          </div>
+        )}
+        
         <div className="mt-12">
           <Pagination 
             activePage={upcomingPage} 
@@ -161,7 +178,6 @@ export function StartupPage() {
           </h2>
           
           <div className="relative group">
-            {/* Navigation Arrows */}
             <button 
               onClick={() => scroll('left')}
               className="absolute left-[-20px] top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/80 rounded-full flex items-center justify-center shadow-xl hover:bg-white transition-all opacity-0 group-hover:opacity-100"
@@ -204,26 +220,32 @@ export function StartupPage() {
             <button className="font-roboto font-medium text-lg text-white/80 hover:text-white hover:underline transition-colors">MORE</button>
           </div>
 
-          <div className="flex flex-col gap-8">
-            {POPULAR_GAMES.map((game, i) => (
-              <div key={i} className="flex items-center gap-8 group cursor-pointer">
-                <div className="w-[200px] h-[280px] bg-[#eee] border-2 border-black/80 rounded-xl overflow-hidden shrink-0 group-hover:border-white transition-all shadow-lg">
-                  <img src={game.img} alt={game.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                </div>
-                <div className="flex flex-col gap-4 flex-1">
-                  <p className="font-roboto text-4xl text-white/80 group-hover:text-white transition-colors">
-                    {game.title}
-                  </p>
-                  <p className="font-roboto text-lg text-white/60 leading-relaxed">
-                    {game.desc}
-                  </p>
-                  <button className="w-fit px-6 py-2 border-2 border-white/80 text-white rounded-full font-roboto font-bold hover:bg-white hover:text-black transition-all">
-                    View Details
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+          {loadingPopular ? (
+            <div className="flex items-center justify-center py-20 text-white/40">
+              <Loader2 className="w-10 h-10 animate-spin" />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-8">
+              {popularGames.map((game, i) => (
+                <Link to={`/game/${game.id}`} key={i} className="flex items-center gap-8 group cursor-pointer">
+                  <div className="w-[200px] h-[280px] bg-[#eee] border-2 border-black/80 rounded-xl overflow-hidden shrink-0 group-hover:border-white transition-all shadow-lg">
+                    <img src={game.img} alt={game.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  </div>
+                  <div className="flex flex-col gap-4 flex-1">
+                    <p className="font-roboto text-4xl text-white/80 group-hover:text-white transition-colors">
+                      {game.title}
+                    </p>
+                    <p className="font-roboto text-lg text-white/60 leading-relaxed line-clamp-3">
+                      {game.desc || 'Join millions of players in exploring this top-rated title. Check out reviews, gameplay videos, and more to see why it\'s trending this week.'}
+                    </p>
+                    <button className="w-fit px-6 py-2 border-2 border-white/80 text-white rounded-full font-roboto font-bold hover:bg-white hover:text-black transition-all">
+                      View Details
+                    </button>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         <Sidebar />
@@ -233,3 +255,5 @@ export function StartupPage() {
     </div>
   )
 }
+
+

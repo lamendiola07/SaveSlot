@@ -53,15 +53,11 @@ export function Header() {
       {/* Actions */}
       <div className="flex items-center gap-6 ml-auto shrink-0">
         <img src={imgBell} alt="notifications" className="w-6 h-6 cursor-pointer" />
-        <button className="flex items-center gap-2 bg-white/80 rounded px-3 py-2 hover:bg-[#773877] transition-all group">
+        <button className="flex items-center gap-2 bg-white/80 rounded px-3 py-2 hover:bg-[#773877] transition-colors">
           <div className="relative w-5 h-5 overflow-visible">
-            <img 
-              src={imgMessageComment} 
-              alt="" 
-              className="absolute w-6 h-6 -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 transition-all group-hover:brightness-0 group-hover:invert" 
-            />
+            <img src={imgMessageComment} alt="" className="absolute w-6 h-6 -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" />
           </div>
-          <span className="font-roboto font-medium text-black group-hover:text-white text-[15px] whitespace-nowrap transition-all">
+          <span className="font-roboto font-medium text-[#564242] text-[15px] whitespace-nowrap">
             New Post
           </span>
         </button>
