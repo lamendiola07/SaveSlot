@@ -9,8 +9,14 @@
     padding: 0;
   }
 
+  html, body {
+    min-height: 100vh;
+  }
+
   body {
-    background-color: #9d9d9d;
+    background: radial-gradient(circle at center, #ae62d7 0%, #7e38a4 25%, #511571 50%, #34084b 75%, #240025 100%);
+    background-attachment: fixed;
+    font-family: 'Roboto', sans-serif;
   }
 }
 

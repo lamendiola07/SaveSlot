@@ -22,8 +22,8 @@ function Pagination({ activePage, totalPages, onPageChange }: { activePage: numb
         <button
           key={n}
           onClick={() => onPageChange(n)}
-          className={`w-9 h-9 rounded flex items-center justify-center font-shantell font-medium text-[15px] transition-all ${
-            n === activePage ? 'bg-black/80 text-white' : 'text-black/40 hover:bg-black/10'
+          className={`w-9 h-9 rounded flex items-center justify-center font-roboto font-medium text-[15px] transition-all ${
+            n === activePage ? 'bg-black/80 text-white' : 'text-white/80 hover:bg-black/10'
           }`}
         >
           {n}
@@ -55,8 +55,8 @@ function GameCard({ title, price, img }: { title: string; price: string; img: st
       <div className="bg-[#eee] border-2 border-black/80 rounded overflow-hidden h-[336px] flex items-center justify-center shrink-0 group-hover:border-white transition-all">
         <img src={img} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
       </div>
-      <div className="font-shantell font-medium text-[15px] text-black/80 flex flex-col">
-        <span className="overflow-hidden text-ellipsis whitespace-nowrap group-hover:text-black">{title}</span>
+      <div className="font-roboto font-medium text-[15px] text-white/80 flex flex-col">
+        <span className="overflow-hidden text-ellipsis whitespace-nowrap group-hover:text-white/80">{title}</span>
         <span>{price}</span>
       </div>
     </div>
@@ -88,7 +88,7 @@ export function StartupPage() {
   }
 
   return (
-    <div className="bg-[#9d9d9d] min-w-[1440px]">
+    <div className="min-w-[1440px]">
       {/* ── Hero Section ── */}
       <section className="relative h-[810px] overflow-hidden flex flex-col">
         {BACKGROUNDS.map((bg, index) => (
@@ -105,7 +105,7 @@ export function StartupPage() {
 
         <div className="flex-1 flex flex-col items-center justify-center relative z-10 px-12 text-center">
           <div className="max-w-[875px] mb-12">
-            <div className="text-white font-young-serif text-[56px] leading-[1.1] drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
+            <div className="text-white font-roboto text-[56px] leading-[1.1] drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
               <p>Track the games you've played.</p>
               <p>Save the one's you want.</p>
               <p>Share your experience with friends.</p>
@@ -113,18 +113,18 @@ export function StartupPage() {
           </div>
 
           <div className="w-[300px]">
-            <button className="w-full h-16 bg-[#45413e] hover:bg-[#5a5653] transition-all rounded-[10px] font-young-serif text-white text-2xl flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95">
+            <button className="w-full h-16 bg-[#45413e] hover:bg-[#5a5653] transition-all rounded-[10px] font-roboto text-white text-2xl flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95">
               Get started - it's free!
             </button>
           </div>
 
-          <div className="mt-8 font-amethysta text-[#45413e] text-xl bg-white/30 px-6 py-2 rounded-full backdrop-blur-md">
+          <div className="mt-8 font-roboto text-[#45413e] text-xl bg-white/30 px-6 py-2 rounded-full backdrop-blur-md">
             The social hub for gamers. Play, Share, and Discover.
           </div>
         </div>
 
         <div className="absolute right-8 bottom-24 flex items-center justify-center w-8 h-[185px]">
-          <p className="-rotate-90 font-taviraj text-white text-xl opacity-60 whitespace-pre origin-center">
+          <p className="-rotate-90 font-roboto text-white text-xl opacity-60 whitespace-pre origin-center">
             {'MINECRAFT  1.26.1'}
           </p>
         </div>
@@ -133,8 +133,8 @@ export function StartupPage() {
       {/* ── Upcoming Games ── */}
       <section className="mx-auto px-[120px] py-16" style={{ maxWidth: 1440 }}>
         <div className="flex items-baseline justify-between mb-8">
-          <p className="font-aclonica text-2xl text-black/80 uppercase tracking-wider">Upcoming Games</p>
-          <button className="flex items-center gap-1 font-shantell font-medium text-lg text-black/80 hover:text-black hover:underline transition-colors">
+          <p className="font-roboto text-2xl text-white/80 uppercase tracking-wider">Upcoming Games</p>
+          <button className="flex items-center gap-1 font-roboto font-medium text-lg text-white/80 hover:text-white hover:underline transition-colors">
             See all
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -156,7 +156,7 @@ export function StartupPage() {
       {/* ── Slider: What You Can Do ── */}
       <section className="bg-white/10 py-20 overflow-hidden relative">
         <div className="mx-auto px-12 relative" style={{ maxWidth: 1440 }}>
-          <h2 className="font-aclonica text-[#45413e] text-[40px] text-center mb-16 uppercase tracking-tighter">
+          <h2 className="font-roboto text-white/80 text-[40px] text-center mb-16 uppercase tracking-tighter">
             WHAT YOU CAN DO WITH SAVESLOT.
           </h2>
           
@@ -185,8 +185,8 @@ export function StartupPage() {
                   className="w-[350px] h-[450px] shrink-0 bg-[#d9d9d9] rounded-[20px] shadow-2xl p-8 flex flex-col justify-end group/card hover:scale-[1.02] transition-transform cursor-pointer overflow-hidden relative"
                 >
                   <div className={`absolute inset-0 ${card.color} opacity-20 group-hover/card:opacity-40 transition-opacity`} />
-                  <h3 className="font-young-serif text-3xl text-black/80 relative z-10">{card.title}</h3>
-                  <p className="font-shantell text-black/60 mt-4 relative z-10">{card.description}</p>
+                  <h3 className="font-roboto text-3xl text-black/80 relative z-10">{card.title}</h3>
+                  <p className="font-roboto text-black/60 mt-4 relative z-10">{card.description}</p>
                 </div>
               ))}
             </div>
@@ -198,10 +198,10 @@ export function StartupPage() {
       <section className="mx-auto px-12 py-20 flex gap-12" style={{ maxWidth: 1440 }}>
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline justify-between mb-8 border-b-2 border-black/10 pb-4">
-            <p className="font-aclonica text-2xl text-black/80 uppercase tracking-wider">
+            <p className="font-roboto text-2xl text-white/80 uppercase tracking-wider">
               Popular Games
             </p>
-            <button className="font-shantell font-medium text-lg text-black/80 hover:text-black hover:underline transition-colors">MORE</button>
+            <button className="font-roboto font-medium text-lg text-white/80 hover:text-white hover:underline transition-colors">MORE</button>
           </div>
 
           <div className="flex flex-col gap-8">
@@ -211,13 +211,13 @@ export function StartupPage() {
                   <img src={game.img} alt={game.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                 </div>
                 <div className="flex flex-col gap-4 flex-1">
-                  <p className="font-young-serif text-4xl text-black/80 group-hover:text-black transition-colors">
+                  <p className="font-roboto text-4xl text-white/80 group-hover:text-white transition-colors">
                     {game.title}
                   </p>
-                  <p className="font-shantell text-lg text-black/60 leading-relaxed">
+                  <p className="font-roboto text-lg text-white/60 leading-relaxed">
                     {game.desc}
                   </p>
-                  <button className="w-fit px-6 py-2 border-2 border-black/80 rounded-full font-shantell font-bold hover:bg-black hover:text-white transition-all">
+                  <button className="w-fit px-6 py-2 border-2 border-white/80 text-white rounded-full font-roboto font-bold hover:bg-white hover:text-black transition-all">
                     View Details
                   </button>
                 </div>

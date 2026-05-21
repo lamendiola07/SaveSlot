@@ -29,12 +29,12 @@ export function GamesPage() {
   }
 
   return (
-    <div className="bg-[#9d9d9d] min-h-screen">
+    <div className="min-h-screen">
       <Header />
       <main className="max-w-[1440px] mx-auto px-12 py-16">
         <div className="flex justify-between items-center mb-12">
-          <h1 className="font-young-serif text-5xl text-white">BROWSE GAMES</h1>
-          <p className="text-white font-shantell">Showing {filteredGames.length} results</p>
+          <h1 className="font-roboto text-5xl text-white">BROWSE GAMES</h1>
+          <p className="text-white font-roboto">Showing {filteredGames.length} results</p>
         </div>
 
         {paginatedGames.length > 0 ? (
@@ -46,13 +46,13 @@ export function GamesPage() {
                     <img src={game.img} alt={game.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   </div>
                   <div className="mt-4">
-                    <h3 className="font-young-serif text-xl text-white">{game.title}</h3>
+                    <h3 className="font-roboto text-xl text-white">{game.title}</h3>
                     <div className="flex gap-2 mt-1">
                       {game.tags.map(tag => (
                         <span key={tag} className="text-xs bg-black/20 text-white/60 px-2 py-0.5 rounded-full">{tag}</span>
                       ))}
                     </div>
-                    <p className="font-shantell text-white/80 mt-2">{game.price}</p>
+                    <p className="font-roboto text-white/80 mt-2">{game.price}</p>
                   </div>
                 </div>
               ))}
@@ -81,7 +81,7 @@ export function GamesPage() {
                     <button
                       key={pageNum}
                       onClick={() => goToPage(pageNum)}
-                      className={`w-10 h-10 rounded-lg font-young-serif text-lg transition-all ${
+                      className={`w-10 h-10 rounded-lg font-roboto text-lg transition-all ${
                         currentPage === pageNum 
                         ? 'bg-white text-black scale-110 shadow-lg' 
                         : 'bg-white/10 text-white hover:bg-white/20'
@@ -104,7 +104,7 @@ export function GamesPage() {
           </>
         ) : (
           <div className="text-center py-32 bg-white/5 rounded-3xl border border-white/10 border-dashed">
-            <p className="font-young-serif text-3xl text-white/40">No games found for "{query}"</p>
+            <p className="font-roboto text-3xl text-white/40">No games found for "{query}"</p>
             <button 
               onClick={() => useSearchStore.getState().setQuery('')}
               className="mt-6 text-white hover:underline"

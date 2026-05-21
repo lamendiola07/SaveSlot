@@ -4,6 +4,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
+        roboto: ['Roboto', 'sans-serif'],
         shantell: ['Shantell Sans', 'sans-serif'],
         amethysta: ['Amethysta', 'serif'],
         'young-serif': ['Young Serif', 'serif'],
