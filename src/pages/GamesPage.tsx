@@ -3,13 +3,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 import { useSearchStore } from '../store'
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useGames } from '../hooks/useGames'
 
 const GAMES_PER_PAGE = 8
 
 export function GamesPage({ forceType }: { forceType?: 'upcoming' | 'popular' }) {
-  const { query, ordering: storeOrdering, dates: storeDates, setFilters, setQuery } = useSearchStore()
+  const { query, ordering: storeOrdering, dates: storeDates } = useSearchStore()
   const [currentPage, setCurrentPage] = useState(1)
   const navigate = useNavigate()
 
@@ -62,17 +62,26 @@ export function GamesPage({ forceType }: { forceType?: 'upcoming' | 'popular' })
         )}
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-32 text-white/40">
-            <Loader2 className="w-12 h-12 animate-spin mb-4" />
-            <p className="font-roboto text-2xl">Loading the latest games...</p>
+          <div className="grid grid-cols-4 gap-8">
+            {Array.from({ length: GAMES_PER_PAGE }).map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="bg-white/10 rounded-2xl aspect-[3/4] mb-4"></div>
+                <div className="h-6 bg-white/20 rounded w-3/4 mb-2"></div>
+                <div className="flex gap-2 mb-2">
+                  <div className="h-4 bg-white/10 rounded-full w-12"></div>
+                  <div className="h-4 bg-white/10 rounded-full w-16"></div>
+                </div>
+                <div className="h-5 bg-white/20 rounded w-16"></div>
+              </div>
+            ))}
           </div>
         ) : games.length > 0 ? (
           <>
             <div className="grid grid-cols-4 gap-8">
               {games.map((game) => (
-                <Link to={`/game/${game.id}`} key={game.id} className="group cursor-pointer">
+                <Link to={`/game/${game.id}`} key={game.id} className="group cursor-pointer transition-transform duration-300 hover:scale-105">
                   <div className="bg-white/10 rounded-2xl overflow-hidden aspect-[3/4] border border-white/10 group-hover:border-white transition-all shadow-xl">
-                    <img src={game.img} alt={game.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={game.img} alt={game.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                   </div>
                   <div className="mt-4">
                     <h3 className="font-roboto text-xl text-white truncate">{game.title}</h3>

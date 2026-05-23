@@ -15,6 +15,16 @@ export function useGames({ query, page = 1, pageSize = 8, ordering, dates }: Use
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [totalCount, setTotalCount] = useState(0)
+  const [debouncedQuery, setDebouncedQuery] = useState(query)
+
+  // Debounce the query value
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(query)
+    }, 500)
+
+    return () => clearTimeout(handler)
+  }, [query])
 
   const loadGames = useCallback(async () => {
     setLoading(true)
@@ -24,7 +34,7 @@ export function useGames({ query, page = 1, pageSize = 8, ordering, dates }: Use
         page: page.toString(),
         page_size: pageSize.toString(),
       }
-      if (query) params.search = query
+      if (debouncedQuery) params.search = debouncedQuery
       if (ordering) params.ordering = ordering
       if (dates) params.dates = dates
 
@@ -36,7 +46,7 @@ export function useGames({ query, page = 1, pageSize = 8, ordering, dates }: Use
     } finally {
       setLoading(false)
     }
-  }, [query, page, pageSize, ordering, dates])
+  }, [debouncedQuery, page, pageSize, ordering, dates])
 
   useEffect(() => {
     loadGames()

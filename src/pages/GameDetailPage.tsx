@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
-import { ChevronRight, Loader2, Star } from 'lucide-react'
+import { ChevronRight, Star } from 'lucide-react'
 import { Game } from '../types/game'
 import { fetchRawgGameDetail } from '../services/rawgApi'
 
@@ -125,12 +125,59 @@ export function GameDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-w-[1440px]">
         <Header />
-        <div className="flex-1 flex flex-col items-center justify-center text-white/40">
-          <Loader2 className="w-12 h-12 animate-spin mb-4" />
-          <p className="font-roboto text-2xl">Fetching game details...</p>
+
+        <div className="relative w-full h-[600px] overflow-hidden animate-pulse bg-white/5">
+          <div className="absolute inset-0 bg-gradient-to-t from-[#240025] via-transparent to-transparent" />
+          
+          <div className="relative max-w-[1440px] mx-auto px-12 h-full flex items-end pb-16 gap-12">
+            <div className="w-[300px] aspect-[3/4] rounded-2xl overflow-hidden bg-white/10 shrink-0">
+            </div>
+            <div className="flex flex-col gap-6 pb-4 w-full">
+              <div className="flex gap-2">
+                <div className="w-16 h-6 bg-white/10 rounded-full"></div>
+                <div className="w-20 h-6 bg-white/10 rounded-full"></div>
+              </div>
+              <div className="h-16 bg-white/20 rounded w-1/2"></div>
+              <div className="flex items-center gap-8">
+                <div className="h-6 bg-white/10 rounded w-32"></div>
+                <div className="h-6 bg-white/10 rounded w-40"></div>
+                <div className="h-8 bg-white/20 rounded w-24"></div>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <section className="mx-auto px-12 py-16 max-w-[1440px] grid grid-cols-3 gap-16 animate-pulse">
+          <div className="col-span-2">
+            <div className="h-8 bg-white/20 rounded w-32 mb-8"></div>
+            <div className="space-y-4">
+              <div className="h-5 bg-white/10 rounded w-full"></div>
+              <div className="h-5 bg-white/10 rounded w-full"></div>
+              <div className="h-5 bg-white/10 rounded w-5/6"></div>
+              <div className="h-5 bg-white/10 rounded w-4/6"></div>
+            </div>
+          </div>
+          <div className="col-span-1">
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-8">
+              <div className="h-8 bg-white/20 rounded w-32 mb-6"></div>
+              <div className="space-y-6">
+                <div>
+                  <div className="h-4 bg-white/10 rounded w-24 mb-2"></div>
+                  <div className="h-5 bg-white/20 rounded w-32"></div>
+                </div>
+                <div>
+                  <div className="h-4 bg-white/10 rounded w-24 mb-2"></div>
+                  <div className="h-5 bg-white/20 rounded w-48"></div>
+                </div>
+                <div className="w-full h-14 bg-white/20 rounded-xl mt-8"></div>
+                <div className="w-full h-14 bg-white/10 rounded-xl"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <Footer />
       </div>
     )

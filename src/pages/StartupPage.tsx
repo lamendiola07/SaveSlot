@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 import { Sidebar } from '../components/Sidebar'
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useGames } from '../hooks/useGames'
 import { useSearchStore } from '../store'
 
@@ -49,9 +49,9 @@ const whatYouCanDoCards = [
 
 function GameCard({ id, title, price, img }: { id: number; title: string; price: string; img: string }) {
   return (
-    <Link to={`/game/${id}`} className="flex flex-col gap-3 flex-1 min-w-0 group cursor-pointer">
+    <Link to={`/game/${id}`} className="flex flex-col gap-3 flex-1 min-w-0 group cursor-pointer transition-transform duration-300 hover:scale-105">
       <div className="bg-[#eee] border-2 border-black/80 rounded overflow-hidden h-[336px] flex items-center justify-center shrink-0 group-hover:border-white transition-all">
-        <img src={img} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+        <img src={img} alt={title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
       </div>
       <div className="font-roboto font-medium text-[15px] text-white/80 flex flex-col">
         <span className="overflow-hidden text-ellipsis whitespace-nowrap group-hover:text-white/80">{title}</span>
@@ -158,8 +158,16 @@ export function StartupPage() {
         </div>
         
         {loadingUpcoming ? (
-          <div className="h-[400px] flex items-center justify-center text-white/40">
-            <Loader2 className="w-10 h-10 animate-spin" />
+          <div className="grid grid-cols-4 gap-8 h-[400px]">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex flex-col gap-3 flex-1 min-w-0 animate-pulse">
+                <div className="bg-white/10 border-2 border-transparent rounded h-[336px] shrink-0"></div>
+                <div className="flex flex-col gap-1">
+                  <div className="h-4 bg-white/20 rounded w-3/4"></div>
+                  <div className="h-4 bg-white/20 rounded w-1/4 mt-1"></div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-4 gap-8 h-[400px]">
@@ -237,13 +245,26 @@ export function StartupPage() {
           </div>
 
           {loadingPopular ? (
-            <div className="flex items-center justify-center py-20 text-white/40">
-              <Loader2 className="w-10 h-10 animate-spin" />
+            <div className="flex flex-col gap-8">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-8 animate-pulse">
+                  <div className="w-[200px] h-[280px] bg-white/10 rounded-xl shrink-0"></div>
+                  <div className="flex flex-col gap-4 flex-1">
+                    <div className="h-10 bg-white/20 rounded w-2/3"></div>
+                    <div className="space-y-2">
+                      <div className="h-5 bg-white/10 rounded w-full"></div>
+                      <div className="h-5 bg-white/10 rounded w-full"></div>
+                      <div className="h-5 bg-white/10 rounded w-5/6"></div>
+                    </div>
+                    <div className="h-10 bg-white/20 rounded-full w-32 mt-2"></div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="flex flex-col gap-8">
               {popularGames.map((game, i) => (
-                <Link to={`/game/${game.id}`} key={i} className="flex items-center gap-8 group cursor-pointer">
+                <Link to={`/game/${game.id}`} key={i} className="flex items-center gap-8 group cursor-pointer transition-transform duration-300 hover:scale-[1.02] origin-left">
                   <div className="w-[200px] h-[280px] bg-[#eee] border-2 border-black/80 rounded-xl overflow-hidden shrink-0 group-hover:border-white transition-all shadow-lg">
                     <img src={game.img} alt={game.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                   </div>
