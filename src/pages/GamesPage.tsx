@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 import { useSearchStore } from '../store'
@@ -8,14 +8,21 @@ import { useGames } from '../hooks/useGames'
 
 const GAMES_PER_PAGE = 8
 
-export function GamesPage() {
-  const query = useSearchStore(state => state.query)
+export function GamesPage({ forceType }: { forceType?: 'upcoming' | 'popular' }) {
+  const { query, ordering: storeOrdering, dates: storeDates, setFilters, setQuery } = useSearchStore()
   const [currentPage, setCurrentPage] = useState(1)
+  const navigate = useNavigate()
+
+  // Use forced filters if on a specific route, otherwise use store values
+  const ordering = forceType === 'upcoming' ? '-released' : forceType === 'popular' ? '-metacritic' : storeOrdering
+  const dates = forceType === 'upcoming' ? '2024-01-01,2026-12-31' : forceType === 'popular' ? undefined : storeDates
   
   const { games, loading, error, totalCount } = useGames({ 
     query, 
     page: currentPage, 
-    pageSize: GAMES_PER_PAGE 
+    pageSize: GAMES_PER_PAGE,
+    ordering,
+    dates
   })
 
   const totalPages = Math.ceil(totalCount / GAMES_PER_PAGE)
@@ -27,12 +34,16 @@ export function GamesPage() {
     }
   }
 
+  let title = "BROWSE GAMES"
+  if (forceType === 'upcoming' || (ordering === '-released' && dates)) title = "UPCOMING GAMES"
+  else if (forceType === 'popular' || (ordering === '-metacritic')) title = "POPULAR GAMES"
+
   return (
     <div className="min-h-screen">
       <Header />
       <main className="max-w-[1440px] mx-auto px-12 py-16">
         <div className="flex justify-between items-center mb-12">
-          <h1 className="font-roboto text-5xl text-white">BROWSE GAMES</h1>
+          <h1 className="font-roboto text-5xl text-white">{title}</h1>
           <p className="text-white font-roboto">
             {loading ? 'Fetching games...' : `Showing ${totalCount} results`}
           </p>
@@ -123,9 +134,12 @@ export function GamesPage() {
           </>
         ) : (
           <div className="text-center py-32 bg-white/5 rounded-3xl border border-white/10 border-dashed">
-            <p className="font-roboto text-3xl text-white/40">No games found for "{query}"</p>
+            <p className="font-roboto text-3xl text-white/40">No games found{query ? ` for "${query}"` : ''}</p>
             <button 
-              onClick={() => useSearchStore.getState().setQuery('')}
+              onClick={() => {
+                useSearchStore.getState().clearFilters()
+                navigate('/games')
+              }}
               className="mt-6 text-white hover:underline"
             >
               Clear search filters

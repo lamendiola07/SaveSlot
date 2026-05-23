@@ -1,14 +1,22 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore, useSearchStore } from '../store'
+import { supabase } from '../services/supabase'
 
 const imgSearch = 'https://www.figma.com/api/mcp/asset/40eabe15-b606-4e1c-9e6a-08d2af1cbc06'
 const imgBell = 'https://www.figma.com/api/mcp/asset/0166b32e-2102-42e3-ab0c-ce57824eeeb0'
 const imgMessageComment = 'https://www.figma.com/api/mcp/asset/bc2c667c-faa3-4d00-9e97-3961532d2f9f'
 
 export function Header() {
-  const { user, isAuthenticated, logout } = useAuthStore()
+  const { user, isAuthenticated } = useAuthStore()
   const { query, setQuery } = useSearchStore()
   const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    navigate('/')
+  }
+
+  const username = user?.user_metadata?.username || user?.email?.split('@')[0]
 
   return (
     <header className="relative flex items-center gap-16 px-12 py-3 bg-transparent z-50">
@@ -24,6 +32,8 @@ export function Header() {
             placeholder="Search games..." 
             value={query}
             onChange={(e) => {
+              const { setFilters } = useSearchStore.getState()
+              setFilters({ ordering: undefined, dates: undefined })
               setQuery(e.target.value)
               if (window.location.pathname !== '/games') navigate('/games')
             }}
@@ -41,8 +51,8 @@ export function Header() {
           </>
         ) : (
           <div className="flex items-center gap-4">
-            <span className="font-roboto uppercase">Hi, {user?.username}</span>
-            <button onClick={logout} className="h-10 px-2 border-b-2 border-transparent hover:border-[#773877] hover:text-[#773877] transition-all">LOGOUT</button>
+            <span className="font-roboto uppercase">Hi, {username}</span>
+            <button onClick={handleLogout} className="h-10 px-2 border-b-2 border-transparent hover:border-[#773877] hover:text-[#773877] transition-all">LOGOUT</button>
           </div>
         )}
         <Link to="/games" className={`h-10 px-2 flex items-center border-b-2 transition-all ${window.location.pathname === '/games' ? 'border-[#773877] text-[#773877]' : 'border-transparent hover:border-[#773877] hover:text-[#773877]'}`}>GAMES</Link>

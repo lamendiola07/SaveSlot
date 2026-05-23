@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 import { Sidebar } from '../components/Sidebar'
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { useGames } from '../hooks/useGames'
+import { useSearchStore } from '../store'
 
 const BACKGROUNDS = [
   'https://www.figma.com/api/mcp/asset/b43ca7e4-f677-4796-8378-ee5d25b13689', // Minecraft
@@ -64,6 +65,7 @@ export function StartupPage() {
   const [bgIndex, setBgIndex] = useState(0)
   const [upcomingPage, setUpcomingPage] = useState(1)
   const sliderRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
 
   const itemsPerPage = 4
   
@@ -143,7 +145,13 @@ export function StartupPage() {
       <section className="mx-auto px-[120px] py-16" style={{ maxWidth: 1440 }}>
         <div className="flex items-baseline justify-between mb-8">
           <p className="font-roboto text-2xl text-white/80 uppercase tracking-wider">Upcoming Games</p>
-          <button className="flex items-center gap-1 font-roboto font-medium text-lg text-white/80 hover:text-white hover:underline transition-colors">
+          <button 
+            onClick={() => {
+              useSearchStore.getState().clearFilters()
+              navigate('/upcoming')
+            }}
+            className="flex items-center gap-1 font-roboto font-medium text-lg text-white/80 hover:text-white hover:underline transition-colors"
+          >
             See all
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -217,7 +225,15 @@ export function StartupPage() {
             <p className="font-roboto text-2xl text-white/80 uppercase tracking-wider">
               Popular Games
             </p>
-            <button className="font-roboto font-medium text-lg text-white/80 hover:text-white hover:underline transition-colors">MORE</button>
+            <button 
+              onClick={() => {
+                useSearchStore.getState().clearFilters()
+                navigate('/popular')
+              }}
+              className="font-roboto font-medium text-lg text-white/80 hover:text-white hover:underline transition-colors"
+            >
+              MORE
+            </button>
           </div>
 
           {loadingPopular ? (

@@ -3,7 +3,8 @@ import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 import { Sidebar } from '../components/Sidebar'
 import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
+import { supabase } from '../services/supabase'
 
 const imgMcBg = 'https://www.figma.com/api/mcp/asset/22658344-f632-4b41-ab45-55187c980834'
 const imgImageFile = 'https://www.figma.com/api/mcp/asset/aa890ee0-d73e-4427-9ed7-e34839008ab8'
@@ -14,23 +15,47 @@ import { ALL_GAMES } from '../data/games'
 
 const upcomingGames = ALL_GAMES.slice(0, 4)
 
-import { useAuthStore } from '../store'
-
 function AuthModal({ onClose }: { onClose: () => void }) {
   const [isLogin, setIsLogin] = useState(false)
   const [formData, setFormData] = useState({ email: '', username: '', password: '', accept: false })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
 
-  const login = useAuthStore(state => state.login)
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!isLogin && !formData.accept) {
-      alert('Please accept the privacy policy')
-      return
+    setError(null)
+    setLoading(true)
+
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        })
+        if (error) throw error
+      } else {
+        if (!formData.accept) {
+          throw new Error('Please accept the privacy policy')
+        }
+        const { error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              username: formData.username,
+            },
+          },
+        })
+        if (error) throw error
+        alert('Check your email for the confirmation link!')
+      }
+      navigate('/')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+    } finally {
+      setLoading(false)
     }
-    login(formData.email, formData.username || formData.email.split('@')[0])
-    navigate('/')
   }
 
   return (
@@ -48,9 +73,15 @@ function AuthModal({ onClose }: { onClose: () => void }) {
         style={{ width: 500, minHeight: 600 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="font-roboto font-bold text-white text-[28px] text-center mb-6">
+        <h2 className="font-roboto font-bold text-white text-[28px] text-center mb-6 uppercase">
           {isLogin ? 'WELCOME BACK' : 'BE PART OF SAVESLOT'}
         </h2>
+
+        {error && (
+          <div className="w-full bg-red-500/20 border border-red-500 text-red-200 p-3 rounded-lg mb-4 text-sm font-roboto">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="w-full max-w-[400px] flex flex-col gap-4">
           <div className="flex flex-col gap-1">
@@ -58,7 +89,8 @@ function AuthModal({ onClose }: { onClose: () => void }) {
             <input 
               type="email" 
               required
-              className="w-full h-12 bg-[#d9d9d9] rounded-[10px] px-4 font-roboto text-black outline-none focus:ring-2 ring-white/50"
+              disabled={loading}
+              className="w-full h-12 bg-[#d9d9d9] rounded-[10px] px-4 font-roboto text-black outline-none focus:ring-2 ring-white/50 disabled:opacity-50"
               value={formData.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
             />
@@ -70,7 +102,8 @@ function AuthModal({ onClose }: { onClose: () => void }) {
               <input 
                 type="text" 
                 required
-                className="w-full h-12 bg-[#d9d9d9] rounded-[10px] px-4 font-roboto text-black outline-none focus:ring-2 ring-white/50"
+                disabled={loading}
+                className="w-full h-12 bg-[#d9d9d9] rounded-[10px] px-4 font-roboto text-black outline-none focus:ring-2 ring-white/50 disabled:opacity-50"
                 value={formData.username}
                 onChange={(e) => setFormData({...formData, username: e.target.value})}
               />
@@ -82,7 +115,8 @@ function AuthModal({ onClose }: { onClose: () => void }) {
             <input 
               type="password" 
               required
-              className="w-full h-12 bg-[#d9d9d9] rounded-[10px] px-4 font-roboto text-black outline-none focus:ring-2 ring-white/50"
+              disabled={loading}
+              className="w-full h-12 bg-[#d9d9d9] rounded-[10px] px-4 font-roboto text-black outline-none focus:ring-2 ring-white/50 disabled:opacity-50"
               value={formData.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
             />
@@ -94,6 +128,7 @@ function AuthModal({ onClose }: { onClose: () => void }) {
                 type="checkbox" 
                 required
                 id="accept"
+                disabled={loading}
                 className="w-5 h-5 shrink-0 mt-1 cursor-pointer accent-white"
                 checked={formData.accept}
                 onChange={(e) => setFormData({...formData, accept: e.target.checked})}
@@ -106,10 +141,11 @@ function AuthModal({ onClose }: { onClose: () => void }) {
 
           <button 
             type="submit"
-            className="w-full bg-white hover:bg-white/90 transition-colors rounded-[10px] h-12 mt-4 flex items-center justify-center group"
+            disabled={loading}
+            className="w-full bg-white hover:bg-white/90 transition-colors rounded-[10px] h-12 mt-4 flex items-center justify-center group disabled:opacity-50"
           >
             <span className="font-roboto font-bold text-black text-[18px]">
-              {isLogin ? 'SIGN IN' : 'SIGN UP'}
+              {loading ? 'PROCESSING...' : (isLogin ? 'SIGN IN' : 'SIGN UP')}
             </span>
           </button>
 
@@ -117,8 +153,9 @@ function AuthModal({ onClose }: { onClose: () => void }) {
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <button 
               type="button"
+              disabled={loading}
               onClick={() => setIsLogin(!isLogin)}
-              className="text-lavander/500 hover:underline font-bold"
+              className="text-white hover:underline font-bold"
             >
               {isLogin ? 'Sign Up' : 'Sign In'}
             </button>
@@ -127,7 +164,8 @@ function AuthModal({ onClose }: { onClose: () => void }) {
 
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"
+          disabled={loading}
+          className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors disabled:hidden"
         >
           ✕
         </button>
