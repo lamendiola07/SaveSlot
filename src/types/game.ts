@@ -7,6 +7,18 @@ export interface Game {
   desc?: string
   rating?: number
   released?: string
+  // Real-time pricing fields
+  cheapestPrice?: string
+  normalPrice?: string
+  isOnSale?: boolean
+  savings?: string
+  dealLink?: string
+  storeName?: string
+  storeIcon?: string
+  // Platform info
+  platforms?: string[]
+  // Company info
+  developers?: string[]
 }
 
 export interface RawgGame {
@@ -17,6 +29,8 @@ export interface RawgGame {
   description_raw?: string
   metacritic?: number
   released?: string
+  parent_platforms?: { platform: { id: number; name: string; slug: string } }[]
+  developers?: { name: string }[]
 }
 
 export interface RawgResponse {

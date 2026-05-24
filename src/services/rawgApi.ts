@@ -3,17 +3,17 @@ import { RawgResponse, RawgGame, Game } from '../types/game'
 const API_KEY = import.meta.env.VITE_RAWG_API_KEY
 const BASE_URL = 'https://api.rawg.io/api'
 
-const mockPrice = () => `$${(Math.random() * 50 + 10).toFixed(2)}`
-
 export const mapRawgGameToGame = (rg: RawgGame): Game => ({
   id: rg.id,
   title: rg.name,
-  price: mockPrice(),
+  price: 'Check Price',
   img: rg.background_image || 'https://via.placeholder.com/600x400?text=No+Image',
   tags: rg.genres?.map(g => g.name) || [],
   desc: rg.description_raw,
   rating: rg.metacritic,
-  released: rg.released
+  released: rg.released,
+  platforms: rg.parent_platforms?.map(p => p.platform.slug) || [],
+  developers: rg.developers?.map(d => d.name) || []
 })
 
 export async function fetchRawgGames(params: Record<string, string> = {}): Promise<{ games: Game[], count: number }> {

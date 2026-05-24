@@ -101,11 +101,15 @@ function CommentThread({ comment }: { comment: Comment }) {
   )
 }
 
+import { useGamePrice } from '../hooks/useGamePrice'
+
 export function GameDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [game, setGame] = useState<Game | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const { pricing, loading: pricingLoading } = useGamePrice(game?.title || '', game?.platforms)
 
   useEffect(() => {
     async function getDetail() {
@@ -196,6 +200,8 @@ export function GameDetailPage() {
     )
   }
 
+  const displayPrice = pricing?.cheapestPrice || (pricingLoading ? '...' : 'Check Price')
+
   return (
     <div className="min-w-[1440px]">
       <Header />
@@ -216,14 +222,30 @@ export function GameDetailPage() {
                 </span>
               ))}
             </div>
-            <h1 className="font-roboto text-6xl text-white font-bold drop-shadow-lg">{game.title}</h1>
+            <div className="flex items-center gap-4">
+              <h1 className="font-roboto text-6xl text-white font-bold drop-shadow-lg">{game.title}</h1>
+              {pricing?.isOnSale && (
+                <span className="bg-red-600 text-white px-3 py-1 rounded-lg font-bold text-xl shadow-lg animate-bounce">
+                  {pricing.savings}
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-8 text-white/80 font-roboto text-xl">
               <div className="flex items-center gap-2">
                 <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" />
                 <span>{game.rating || 'N/A'} Metacritic</span>
               </div>
               <div>Released: {game.released}</div>
-              <div className="text-2xl font-bold text-white">{game.price}</div>
+              <div className="flex items-center gap-3">
+                <span className={`text-3xl font-bold ${pricing?.isOnSale ? 'text-green-400' : 'text-white'}`}>
+                  {displayPrice}
+                </span>
+                {pricing?.isOnSale && (
+                  <span className="text-white/40 line-through text-lg">
+                    {pricing.normalPrice}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -267,17 +289,39 @@ export function GameDetailPage() {
           <div className="bg-white/5 border border-white/10 rounded-3xl p-8 sticky top-8">
             <h3 className="font-roboto text-2xl text-white mb-6">Game Info</h3>
             <div className="space-y-6">
-              <div>
-                <p className="text-white/40 text-sm mb-1 uppercase tracking-wider">Developer</p>
-                <p className="text-white">To be fetched...</p>
-              </div>
+              {pricing?.storeName && (
+                <div className="flex items-center gap-3 bg-white/5 p-4 rounded-xl border border-white/10">
+                  {pricing.storeIcon && <img src={pricing.storeIcon} alt="" className="w-8 h-8" />}
+                  <div>
+                    <p className="text-white/40 text-xs uppercase tracking-wider">Best Deal at</p>
+                    <p className="text-white font-bold">{pricing.storeName}</p>
+                  </div>
+                </div>
+              )}
+              {game.developers && game.developers.length > 0 && (
+                <div>
+                  <p className="text-white/40 text-sm mb-1 uppercase tracking-wider">Developer</p>
+                  <p className="text-white">{game.developers.join(', ')}</p>
+                </div>
+              )}
               <div>
                 <p className="text-white/40 text-sm mb-1 uppercase tracking-wider">Platforms</p>
                 <p className="text-white">PC, PS5, Xbox Series X/S</p>
               </div>
-              <button className="w-full bg-white text-black font-roboto font-bold py-4 rounded-xl hover:bg-white/90 transition-all mt-8">
-                ADD TO WISHLIST
-              </button>
+              {pricing?.dealLink ? (
+                <a 
+                  href={pricing.dealLink} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block w-full bg-green-600 text-white text-center font-roboto font-bold py-4 rounded-xl hover:bg-green-500 transition-all mt-8"
+                >
+                  VIEW DEAL ON {pricing.storeName?.toUpperCase()}
+                </a>
+              ) : (
+                <button className="w-full bg-white text-black font-roboto font-bold py-4 rounded-xl hover:bg-white/90 transition-all mt-8">
+                  ADD TO WISHLIST
+                </button>
+              )}
               <button className="w-full bg-[#773877] text-white font-roboto font-bold py-4 rounded-xl hover:bg-[#8e448e] transition-all">
                 I'VE PLAYED THIS
               </button>

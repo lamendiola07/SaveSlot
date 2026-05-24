@@ -5,13 +5,14 @@ import { Sidebar } from '../components/Sidebar'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '../services/supabase'
+import { ALL_GAMES } from '../data/games'
 
 const imgMcBg = 'https://www.figma.com/api/mcp/asset/22658344-f632-4b41-ab45-55187c980834'
 const imgImageFile = 'https://www.figma.com/api/mcp/asset/aa890ee0-d73e-4427-9ed7-e34839008ab8'
 const imgArrowRight = 'https://www.figma.com/api/mcp/asset/6e8a0c26-cf21-4ea5-8b28-c87b57815d38'
 const imgChevronRight = 'https://www.figma.com/api/mcp/asset/58d0fb28-93b9-48e1-8294-24a54697d2fd'
 
-import { ALL_GAMES } from '../data/games'
+import { GameCard } from '../components/GameCard'
 
 const upcomingGames = ALL_GAMES.slice(0, 4)
 
@@ -223,15 +224,7 @@ export function AuthPage({ onClose }: { onClose: () => void }) {
         </div>
         <div className="flex gap-6">
           {upcomingGames.map((game) => (
-            <div key={game.id} className="flex flex-col gap-3 flex-1 min-w-0">
-              <div className="bg-[#eee] border-2 border-black/80 rounded overflow-hidden h-[336px] flex items-center justify-center">
-                <img src={game.img} alt={game.title} className="w-full h-full object-cover" />
-              </div>
-              <div className="font-roboto font-medium text-[15px] text-black/80 flex flex-col">
-                <span className="overflow-hidden text-ellipsis whitespace-nowrap">{game.title}</span>
-                <span>{game.price}</span>
-              </div>
-            </div>
+            <GameCard key={game.id} game={game} />
           ))}
         </div>
         <div className="mt-16 flex justify-end gap-1">

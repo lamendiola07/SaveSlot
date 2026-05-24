@@ -6,6 +6,7 @@ import { Sidebar } from '../components/Sidebar'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useGames } from '../hooks/useGames'
 import { useSearchStore } from '../store'
+import { GameCard } from '../components/GameCard'
 
 const BACKGROUNDS = [
   'https://www.figma.com/api/mcp/asset/b43ca7e4-f677-4796-8378-ee5d25b13689', // Minecraft
@@ -46,20 +47,6 @@ const whatYouCanDoCards = [
   { id: 5, title: 'Game Reviews', description: 'Read and write community reviews.', color: 'bg-yellow-400' },
   { id: 6, title: 'Live Events', description: 'Join exclusive community tournaments.', color: 'bg-orange-400' },
 ]
-
-function GameCard({ id, title, price, img }: { id: number; title: string; price: string; img: string }) {
-  return (
-    <Link to={`/game/${id}`} className="flex flex-col gap-3 flex-1 min-w-0 group cursor-pointer transition-transform duration-300 hover:scale-105">
-      <div className="bg-[#eee] border-2 border-black/80 rounded overflow-hidden h-[336px] flex items-center justify-center shrink-0 group-hover:border-white transition-all">
-        <img src={img} alt={title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-      </div>
-      <div className="font-roboto font-medium text-[15px] text-white/80 flex flex-col">
-        <span className="overflow-hidden text-ellipsis whitespace-nowrap group-hover:text-white/80">{title}</span>
-        <span>{price}</span>
-      </div>
-    </Link>
-  )
-}
 
 export function StartupPage() {
   const [bgIndex, setBgIndex] = useState(0)
@@ -172,7 +159,7 @@ export function StartupPage() {
         ) : (
           <div className="grid grid-cols-4 gap-8 h-[400px]">
             {upcomingGames.map((game) => (
-              <GameCard key={game.id} id={game.id} title={game.title} price={game.price} img={game.img} />
+              <GameCard key={game.id} game={game} />
             ))}
           </div>
         )}
@@ -292,5 +279,3 @@ export function StartupPage() {
     </div>
   )
 }
-
-

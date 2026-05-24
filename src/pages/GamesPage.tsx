@@ -6,6 +6,8 @@ import { useSearchStore } from '../store'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useGames } from '../hooks/useGames'
 
+import { GameCard } from '../components/GameCard'
+
 const GAMES_PER_PAGE = 8
 
 export function GamesPage({ forceType }: { forceType?: 'upcoming' | 'popular' }) {
@@ -79,20 +81,7 @@ export function GamesPage({ forceType }: { forceType?: 'upcoming' | 'popular' })
           <>
             <div className="grid grid-cols-4 gap-8">
               {games.map((game) => (
-                <Link to={`/game/${game.id}`} key={game.id} className="group cursor-pointer transition-transform duration-300 hover:scale-105">
-                  <div className="bg-white/10 rounded-2xl overflow-hidden aspect-[3/4] border border-white/10 group-hover:border-white transition-all shadow-xl">
-                    <img src={game.img} alt={game.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  </div>
-                  <div className="mt-4">
-                    <h3 className="font-roboto text-xl text-white truncate">{game.title}</h3>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {game.tags.slice(0, 3).map(tag => (
-                        <span key={tag} className="text-[10px] bg-black/20 text-white/60 px-2 py-0.5 rounded-full whitespace-nowrap">{tag}</span>
-                      ))}
-                    </div>
-                    <p className="font-roboto text-white/80 mt-2">{game.price}</p>
-                  </div>
-                </Link>
+                <GameCard key={game.id} game={game} />
               ))}
             </div>
 
