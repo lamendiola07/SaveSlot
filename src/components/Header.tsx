@@ -129,7 +129,7 @@ export function Header() {
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-72 bg-[#2a0838] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+            <div className="fixed top-[60px] right-3 w-72 bg-[#2a0838] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
               {isAuthenticated ? (
                 <>
                   {/* Profile section */}

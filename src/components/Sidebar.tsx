@@ -10,11 +10,6 @@ const topPlayers = [
   { name: 'Orion Valor', handle: '@orionvalor' },
 ]
 
-const footerLinks = [
-  'Privacy Policy', 'Terms of Service', 'Contact Us', 'About Us',
-  'Careers', 'Press', 'Developers', 'Advertise', 'Help',
-]
-
 export function Sidebar() {
   return (
     <div className="flex flex-col overflow-hidden h-[544px] w-[381px]">
@@ -41,15 +36,6 @@ export function Sidebar() {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Fine print */}
-      <div className="flex flex-wrap gap-x-4 gap-y-3 py-6 px-4 bg-[#42135b]/50 border-t border-white/10">
-        {footerLinks.map((link) => (
-          <button key={link} className="font-roboto text-[12px] text-white/40 hover:text-white/60 leading-4 whitespace-nowrap transition-colors">
-            {link}
-          </button>
-        ))}
       </div>
     </div>
   )
