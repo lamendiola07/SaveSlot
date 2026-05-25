@@ -40,12 +40,12 @@ function Pagination({ activePage, totalPages, onPageChange }: { activePage: numb
 }
 
 const whatYouCanDoCards = [
-  { id: 1, title: 'Track Progress', description: 'Keep tabs on your gaming journey.', color: 'bg-blue-400' },
-  { id: 2, title: 'Connect Friends', description: 'Share your high scores and achievements.', color: 'bg-green-400' },
-  { id: 3, title: 'Discover Games', description: 'Find your next obsession easily.', color: 'bg-purple-400' },
-  { id: 4, title: 'Personal Lists', description: 'Curate the perfect wishlist.', color: 'bg-red-400' },
-  { id: 5, title: 'Game Reviews', description: 'Read and write community reviews.', color: 'bg-yellow-400' },
-  { id: 6, title: 'Live Events', description: 'Join exclusive community tournaments.', color: 'bg-orange-400' },
+  { id: 1, title: 'Track Progress', description: 'Keep tabs on your gaming journey.', image: 'https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?w=700&q=90' },
+  { id: 2, title: 'Connect Friends', description: 'Share your high scores and achievements.', image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=700&q=90' },
+  { id: 3, title: 'Discover Games', description: 'Find your next obsession easily.', image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=700&q=90' },
+  { id: 4, title: 'Personal Lists', description: 'Curate the perfect wishlist.', image: 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=700&q=90' },
+  { id: 5, title: 'Game Reviews', description: 'Read and write community reviews.', image: 'https://images.unsplash.com/photo-1560419015-7c427e8ae5ba?w=700&q=90' },
+  { id: 6, title: 'Live Events', description: 'Join exclusive community tournaments.', image: 'https://images.unsplash.com/photo-1540979388789-6cee28a1cdc9?w=700&q=90' },
 ]
 
 export function StartupPage() {
@@ -201,11 +201,12 @@ export function StartupPage() {
               {whatYouCanDoCards.map((card) => (
                 <div
                   key={card.id}
-                  className="w-[350px] h-[450px] shrink-0 bg-[#d9d9d9] rounded-[20px] shadow-2xl p-8 flex flex-col justify-end group/card hover:scale-[1.02] transition-transform cursor-pointer overflow-hidden relative"
+                  className="w-[350px] h-[450px] shrink-0 rounded-[20px] shadow-2xl p-8 flex flex-col justify-end group/card hover:scale-[1.02] transition-transform cursor-pointer overflow-hidden relative"
+                  style={{ backgroundImage: `url(${card.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
                 >
-                  <div className={`absolute inset-0 ${card.color} opacity-20 group-hover/card:opacity-40 transition-opacity`} />
-                  <h3 className="font-roboto text-3xl text-black/80 relative z-10">{card.title}</h3>
-                  <p className="font-roboto text-black/60 mt-4 relative z-10">{card.description}</p>
+                  <div className="absolute inset-0 bg-black/50 group-hover/card:bg-black/60 transition-all" />
+                  <h3 className="font-roboto text-3xl font-bold text-white relative z-10 drop-shadow-lg">{card.title}</h3>
+                  <p className="font-roboto font-bold text-white/90 mt-4 relative z-10 drop-shadow-md">{card.description}</p>
                 </div>
               ))}
             </div>

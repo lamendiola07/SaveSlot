@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(Start-Sleep -Seconds 4)",
+      "Bash(Get-Content \"C:\\\\Users\\\\xterm\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-xterm-saveslot\\\\5da978da-4019-49b9-8bee-eb75be5e4b4f\\\\tasks\\\\bhhlo1llw.output\")",
+      "Bash(npm install *)"
+    ]
+  }
+}
