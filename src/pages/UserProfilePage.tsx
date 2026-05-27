@@ -201,34 +201,34 @@ export function UserProfilePage() {
                     ?? (post.mediaType === 'image' ? post.mediaUrl : undefined)
 
                   return (
-                    <article key={post.id} className="bg-white/[0.04] border border-white/10 rounded-2xl overflow-hidden flex">
+                    <article key={post.id} className="bg-white/[0.04] border border-white/10 rounded-2xl overflow-hidden flex items-start">
 
-                      {/* ── Left photo 300×500 ── */}
-                      <div className="w-[300px] shrink-0 self-stretch" style={{ minHeight: 500 }}>
+                      {/* ── Left photo 200×300 ── */}
+                      <div className="w-[200px] h-[300px] shrink-0 overflow-hidden bg-[#1e0628] border-r border-white/10">
                         {leftPhoto ? (
                           <img src={leftPhoto} alt="cover" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-b from-[#773877]/30 to-[#240025] flex items-center justify-center">
-                            <Gamepad2 className="w-14 h-14 text-white/10" />
+                            <Gamepad2 className="w-12 h-12 text-white/10" />
                           </div>
                         )}
                       </div>
 
                       {/* ── Right column ── */}
-                      <div className="flex-1 flex flex-col min-w-0 p-5">
+                      <div className="flex-1 flex flex-col min-w-0 p-6 min-h-[300px]">
 
                         {/* User row + ellipsis */}
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-9 h-9 rounded-full bg-[#773877] border border-white/20 flex items-center justify-center overflow-hidden shrink-0">
+                        <div className="flex items-start justify-between gap-4 mb-2">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-[#773877] border border-white/20 flex items-center justify-center overflow-hidden shrink-0">
                               {post.pfpUrl
                                 ? <img src={post.pfpUrl} alt="" className="w-full h-full object-cover" />
-                                : <User className="w-4 h-4 text-white" />
+                                : <User className="w-5 h-5 text-white" />
                               }
                             </div>
                             <div>
-                              <p className="font-roboto font-bold text-white text-sm leading-tight">{post.username}</p>
-                              <p className="font-roboto text-white/35 text-xs mt-0.5">{timeAgo(post.createdAt)}</p>
+                              <p className="font-roboto font-bold text-white text-base leading-tight">{post.username}</p>
+                              <p className="font-roboto text-white/35 text-xs mt-1">{timeAgo(post.createdAt)}</p>
                             </div>
                           </div>
 
