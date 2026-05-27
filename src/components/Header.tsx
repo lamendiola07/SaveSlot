@@ -96,19 +96,13 @@ export function Header() {
 
       {/* Nav */}
       <nav className="font-roboto text-[15px] text-white flex gap-6 shrink-0 h-full items-center">
-        {!isAuthenticated && (
-          <>
-            <Link to="/auth" className="h-10 px-2 flex items-center border-b-2 border-transparent hover:border-[#773877] hover:text-[#773877] transition-all">SIGN IN</Link>
-            <Link to="/auth" className="h-10 px-2 flex items-center border-b-2 border-transparent hover:border-[#773877] hover:text-[#773877] transition-all">CREATE ACCOUNT</Link>
-          </>
-        )}
-        <Link to="/games" className={`h-10 px-2 flex items-center border-b-2 transition-all ${window.location.pathname === '/games' ? 'border-[#773877] text-[#773877]' : 'border-transparent hover:border-[#773877] hover:text-[#773877]'}`}>GAMES</Link>
+<Link to="/games" className={`h-10 px-2 flex items-center border-b-2 transition-all ${window.location.pathname === '/games' ? 'border-[#773877] text-[#773877]' : 'border-transparent hover:border-[#773877] hover:text-[#773877]'}`}>GAMES</Link>
         <Link to="#" className="h-10 px-2 flex items-center border-b-2 border-transparent hover:border-[#773877] hover:text-[#773877] transition-all">MEMBERS</Link>
         <Link to="#" className="h-10 px-2 flex items-center border-b-2 border-transparent hover:border-[#773877] hover:text-[#773877] transition-all">WHAT'S NEW?</Link>
       </nav>
 
       {/* Actions */}
-      <div className="flex items-center gap-4 ml-auto shrink-0">
+      <div className="flex items-center gap-4 ml-auto shrink-0 -mr-8">
         <img src={imgBell} alt="notifications" className="w-6 h-6 cursor-pointer" />
 
         <button className="flex items-center gap-2 bg-white/80 rounded px-3 py-2 hover:bg-[#773877] transition-colors">
