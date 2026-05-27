@@ -7,7 +7,12 @@
       "Bash(npm install *)",
       "Bash(npx tsc *)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\xterm\\\\saveslot\" -Force)",
-      "Bash(Select-Object Name, PSIsContainer)"
+      "Bash(Select-Object Name, PSIsContainer)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\xterm\\\\saveslot\" -Recurse -Directory)",
+      "Bash(Select-Object -First 50)",
+      "Bash(Format-Table FullName)",
+      "Bash(Find \"C:\\\\Users\\\\xterm\\\\saveslot\\\\src\" -type f -name \"*.ts\" -o -name \"*.tsx\")",
+      "Bash(Sort)"
     ]
   }
 }

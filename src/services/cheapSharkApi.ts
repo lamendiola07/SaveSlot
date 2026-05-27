@@ -1,5 +1,3 @@
-import { Game } from '../types/game';
-
 const BASE_URL = 'https://www.cheapshark.com/api/1.0';
 
 export interface CheapSharkDeal {
@@ -73,3 +71,15 @@ export async function fetchBestDealForTitle(title: string): Promise<CheapSharkDe
 }
 
 export const getRedirectUrl = (dealId: string) => `https://www.cheapshark.com/redirect?dealID=${dealId}`;
+
+export async function fetchTopDeals(pageSize = 10): Promise<CheapSharkDeal[]> {
+  try {
+    const params = new URLSearchParams({ sortBy: 'DealRating', pageSize: String(pageSize) })
+    const res = await fetch(`${BASE_URL}/deals?${params}`)
+    if (!res.ok) throw new Error('Failed to fetch top deals')
+    return await res.json()
+  } catch (error) {
+    console.error('CheapShark Top Deals Error:', error)
+    return []
+  }
+}

@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Menu, User, Mail, Lock, LogOut, Pencil } from 'lucide-react'
+import { Menu, User, Mail, Lock, LogOut, Pencil, UserRound } from 'lucide-react'
 import { useAuthStore, useSearchStore } from '../store'
 import { supabase } from '../services/supabase'
 import { PfpCropModal } from './PfpCropModal'
+import { NotificationsPanel } from './NotificationsPanel'
+import { CreatePostModal } from './CreatePostModal'
 
 const imgSearch = 'https://www.figma.com/api/mcp/asset/40eabe15-b606-4e1c-9e6a-08d2af1cbc06'
 const imgBell = 'https://www.figma.com/api/mcp/asset/0166b32e-2102-42e3-ab0c-ce57824eeeb0'
@@ -21,10 +23,13 @@ export function Header() {
   const [passwordInput, setPasswordInput] = useState('')
   const [feedback, setFeedback] = useState('')
   const [showCropModal, setShowCropModal] = useState(false)
+  const [showNotif, setShowNotif] = useState(false)
+  const [showPostModal, setShowPostModal] = useState(false)
   const [pfpUrl, setPfpUrl] = useState<string | null>(() =>
     user?.id ? localStorage.getItem(`pfp_${user.id}`) : null
   )
   const menuRef = useRef<HTMLDivElement>(null)
+  const notifRef = useRef<HTMLDivElement>(null)
 
   const username = user?.user_metadata?.username || user?.email?.split('@')[0]
 
@@ -34,6 +39,9 @@ export function Header() {
         setMenuOpen(false)
         setActivePanel(null)
         setFeedback('')
+      }
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotif(false)
       }
     }
     document.addEventListener('mousedown', handler)
@@ -103,9 +111,22 @@ export function Header() {
 
       {/* Actions */}
       <div className="flex items-center gap-4 ml-auto shrink-0 -mr-8">
-        <img src={imgBell} alt="notifications" className="w-6 h-6 cursor-pointer" />
+        {/* Notification bell */}
+        <div className="relative" ref={notifRef}>
+          <button
+            onClick={() => setShowNotif(v => !v)}
+            className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${showNotif ? 'bg-white/10' : 'hover:bg-white/10'}`}
+            aria-label="Notifications"
+          >
+            <img src={imgBell} alt="notifications" className="w-6 h-6" />
+          </button>
+          {showNotif && <NotificationsPanel onClose={() => setShowNotif(false)} />}
+        </div>
 
-        <button className="flex items-center gap-2 bg-white/80 rounded px-3 py-2 hover:bg-[#773877] transition-colors">
+        <button
+          onClick={() => setShowPostModal(true)}
+          className="flex items-center gap-2 bg-white/80 rounded px-3 py-2 hover:bg-[#773877] transition-colors"
+        >
           <div className="relative w-5 h-5 overflow-visible">
             <img src={imgMessageComment} alt="" className="absolute w-6 h-6 -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" />
           </div>
@@ -149,6 +170,17 @@ export function Header() {
 
                   {/* Menu items */}
                   <div className="flex flex-col py-1">
+                    {/* Profile link */}
+                    <Link
+                      to="/profile"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors group"
+                    >
+                      <UserRound className="w-4 h-4 shrink-0 text-[#c77fc7]" />
+                      <span className="font-roboto text-white font-semibold text-sm truncate">{username}</span>
+                    </Link>
+                    <div className="border-t border-white/10 mx-4 mb-1" />
+
                     {/* Edit Email */}
                     <button
                       onClick={() => togglePanel('email')}
@@ -233,6 +265,10 @@ export function Header() {
 
       {showCropModal && (
         <PfpCropModal onClose={() => setShowCropModal(false)} onSave={handlePfpSave} />
+      )}
+
+      {showPostModal && (
+        <CreatePostModal onClose={() => setShowPostModal(false)} pfpUrl={pfpUrl} />
       )}
     </header>
   )

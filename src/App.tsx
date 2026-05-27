@@ -4,6 +4,7 @@ import { StartupPage } from './pages/StartupPage'
 import { AuthPage } from './pages/AuthPage'
 import { GameDetailPage } from './pages/GameDetailPage'
 import { GamesPage } from './pages/GamesPage'
+import { UserProfilePage } from './pages/UserProfilePage'
 import { supabase } from './services/supabase'
 import { useAuthStore } from './store'
 
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/upcoming" element={<GamesPage forceType="upcoming" />} />
         <Route path="/popular" element={<GamesPage forceType="popular" />} />
         <Route path="/game/:id" element={<GameDetailPage />} />
+        <Route path="/profile" element={<UserProfilePage />} />
       </Routes>
     </Router>
   )
