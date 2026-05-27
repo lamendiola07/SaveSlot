@@ -5,6 +5,18 @@ export interface TaggedGame {
   id: number
   title: string
   cover: string
+  rating?: number
+  genres?: string[]
+  released?: string
+}
+
+export interface Comment {
+  id: string
+  userId: string
+  username: string
+  pfpUrl: string | null
+  content: string
+  createdAt: string
 }
 
 export interface Post {
@@ -17,56 +29,127 @@ export interface Post {
   mediaType?: 'image' | 'video'
   taggedUsers: string[]
   taggedGame?: TaggedGame
+  gifUrl?: string
+  starRating?: number
   createdAt: string
   likes: number
   likedBy: string[]
+  comments: Comment[]
+  reposts: number
+  repostedBy: string[]
 }
+
+type NewPostData = Omit<Post, 'id' | 'createdAt' | 'likes' | 'likedBy' | 'comments' | 'reposts' | 'repostedBy'>
 
 interface PostsState {
   posts: Post[]
-  addPost: (data: Omit<Post, 'id' | 'createdAt' | 'likes' | 'likedBy'>) => void
+  addPost: (data: NewPostData) => void
   likePost: (postId: string, userId: string) => void
   editPost: (postId: string, content: string) => void
   deletePost: (postId: string) => void
+  addComment: (postId: string, data: Omit<Comment, 'id' | 'createdAt'>) => void
+  repostPost: (postId: string, userId: string) => void
 }
 
 const POSTS_KEY = 'saveslot_posts'
+
 function loadPosts(): Post[] {
-  try { return JSON.parse(localStorage.getItem(POSTS_KEY) || '[]') } catch { return [] }
+  try {
+    const raw: Post[] = JSON.parse(localStorage.getItem(POSTS_KEY) || '[]')
+    // Migrate older posts that lack new fields
+    return raw.map(p => ({
+      ...p,
+      comments: p.comments ?? [],
+      reposts: p.reposts ?? 0,
+      repostedBy: p.repostedBy ?? [],
+    }))
+  } catch { return [] }
+}
+
+function save(posts: Post[]) {
+  localStorage.setItem(POSTS_KEY, JSON.stringify(posts))
 }
 
 export const usePostsStore = create<PostsState>((set) => ({
   posts: loadPosts(),
+
   addPost: (data) => {
-    const post: Post = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString(), likes: 0, likedBy: [] }
+    const post: Post = {
+      ...data,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      likes: 0,
+      likedBy: [],
+      comments: [],
+      reposts: 0,
+      repostedBy: [],
+    }
     set(state => {
       const posts = [post, ...state.posts]
-      localStorage.setItem(POSTS_KEY, JSON.stringify(posts))
+      save(posts)
       return { posts }
     })
   },
+
   likePost: (postId, userId) => {
     set(state => {
       const posts = state.posts.map(p => {
         if (p.id !== postId) return p
         const liked = p.likedBy.includes(userId)
-        return { ...p, likes: liked ? p.likes - 1 : p.likes + 1, likedBy: liked ? p.likedBy.filter(id => id !== userId) : [...p.likedBy, userId] }
+        return {
+          ...p,
+          likes: liked ? p.likes - 1 : p.likes + 1,
+          likedBy: liked ? p.likedBy.filter(id => id !== userId) : [...p.likedBy, userId],
+        }
       })
-      localStorage.setItem(POSTS_KEY, JSON.stringify(posts))
+      save(posts)
       return { posts }
     })
   },
+
   editPost: (postId, content) => {
     set(state => {
       const posts = state.posts.map(p => p.id === postId ? { ...p, content } : p)
-      localStorage.setItem(POSTS_KEY, JSON.stringify(posts))
+      save(posts)
       return { posts }
     })
   },
+
   deletePost: (postId) => {
     set(state => {
       const posts = state.posts.filter(p => p.id !== postId)
-      localStorage.setItem(POSTS_KEY, JSON.stringify(posts))
+      save(posts)
+      return { posts }
+    })
+  },
+
+  addComment: (postId, data) => {
+    const comment: Comment = {
+      ...data,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+    }
+    set(state => {
+      const posts = state.posts.map(p =>
+        p.id === postId ? { ...p, comments: [...p.comments, comment] } : p
+      )
+      save(posts)
+      return { posts }
+    })
+  },
+
+  repostPost: (postId, userId) => {
+    set(state => {
+      const posts = state.posts.map(p => {
+        if (p.id !== postId) return p
+        const reposted = p.repostedBy.includes(userId)
+        return {
+          ...p,
+          reposts: reposted ? p.reposts - 1 : p.reposts + 1,
+          repostedBy: reposted ? p.repostedBy.filter(id => id !== userId) : [...p.repostedBy, userId],
+        }
+      })
+      save(posts)
       return { posts }
     })
   },
