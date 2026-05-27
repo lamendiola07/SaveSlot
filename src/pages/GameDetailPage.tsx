@@ -2,15 +2,9 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
-import { ChevronRight, Star } from 'lucide-react'
+import { ChevronRight, Star, ThumbsUp, ThumbsDown, MessageSquare, User } from 'lucide-react'
 import { Game } from '../types/game'
 import { fetchRawgGameDetail } from '../services/rawgApi'
-
-const imgProfile = 'https://www.figma.com/api/mcp/asset/87533ed7-1e60-4488-9557-f7f13e2939da'
-const imgThumbsUp = 'https://www.figma.com/api/mcp/asset/3dc156e7-5edc-49ac-95a4-da890bda6400'
-const imgThumbsDown = 'https://www.figma.com/api/mcp/asset/32f04a81-fa7c-42d9-8954-a823d904cd0a'
-const imgMessageComment = 'https://www.figma.com/api/mcp/asset/ecb81871-cd25-4f96-befa-a53eda5c09d4'
-const imgLine = 'https://www.figma.com/api/mcp/asset/bed8d55a-88f0-4f90-b40e-91682dd90e42'
 
 interface Reply {
   name: string
@@ -46,16 +40,16 @@ const comments: Comment[] = [
 
 function Reactions({ likes, dislikes }: { likes: number; dislikes: number }) {
   return (
-    <div className="flex items-center">
-      <div className="flex items-center gap-2 w-[72px]">
-        <img src={imgThumbsUp} alt="like" className="w-6 h-6" />
+    <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
+        <ThumbsUp className="w-5 h-5 text-white/40 hover:text-white transition-colors cursor-pointer" />
         <span className="font-roboto font-medium text-[15px] text-white/80">{likes}</span>
       </div>
-      <div className="flex items-center gap-2 w-[72px]">
-        <img src={imgThumbsDown} alt="dislike" className="w-6 h-6" />
+      <div className="flex items-center gap-2">
+        <ThumbsDown className="w-5 h-5 text-white/40 hover:text-white transition-colors cursor-pointer" />
         <span className="font-roboto font-medium text-[15px] text-white/80">{dislikes}</span>
       </div>
-      <img src={imgMessageComment} alt="reply" className="w-6 h-6" />
+      <MessageSquare className="w-5 h-5 text-white/40 hover:text-white transition-colors cursor-pointer" />
     </div>
   )
 }
@@ -63,9 +57,11 @@ function Reactions({ likes, dislikes }: { likes: number; dislikes: number }) {
 function UserHeading({ name, role, size = 36 }: { name: string; role: string; size?: number }) {
   return (
     <div className="flex items-center gap-3">
-      <img src={imgProfile} alt={name} className="shrink-0" style={{ width: size, height: size }} />
+      <div className="rounded-full bg-[#773877] flex items-center justify-center shrink-0 overflow-hidden" style={{ width: size, height: size }}>
+        <User className="text-white" style={{ width: size * 0.6, height: size * 0.6 }} />
+      </div>
       <div className="flex flex-col font-roboto text-[13px] whitespace-nowrap overflow-hidden">
-        <span className="text-white/90 leading-4 overflow-hidden text-ellipsis">{name}</span>
+        <span className="text-white/90 leading-4 overflow-hidden text-ellipsis font-bold">{name}</span>
         <span className="text-white/40 leading-4 overflow-hidden text-ellipsis">{role}</span>
       </div>
     </div>
@@ -83,14 +79,10 @@ function CommentThread({ comment }: { comment: Comment }) {
 
       <div className="flex flex-col">
         {comment.replies.map((reply, i) => (
-          <div key={i} className="flex gap-4 pl-8 py-2 w-full lg:w-[636px]">
-            <div className="relative self-stretch w-0 shrink-0">
-              <div className="absolute inset-y-0 -inset-x-px">
-                <img src={imgLine} alt="" className="w-full h-full" />
-              </div>
-            </div>
+          <div key={i} className="flex gap-4 pl-8 py-2 w-full lg:w-[636px] relative">
+            <div className="absolute left-[17px] top-0 bottom-0 w-0.5 bg-white/5" />
             <div className="flex flex-col gap-3 flex-1 min-w-0">
-              <UserHeading name={reply.name} role={reply.role} size={36} />
+              <UserHeading name={reply.name} role={reply.role} size={32} />
               <p className="font-roboto text-[15px] text-white/50 leading-5">{reply.text}</p>
               <Reactions likes={reply.likes} dislikes={reply.dislikes} />
             </div>
@@ -262,7 +254,9 @@ export function GameDetailPage() {
           <div className="mt-20">
             <h2 className="font-roboto text-3xl text-white mb-8 border-b border-white/10 pb-4">Comments</h2>
             <div className="flex items-start gap-3 py-4 w-full">
-              <img src={imgProfile} alt="Your avatar" className="w-9 h-9 shrink-0 mt-1" />
+              <div className="w-9 h-9 rounded-full bg-[#773877] flex items-center justify-center shrink-0 mt-1">
+                <User className="w-5 h-5 text-white" />
+              </div>
               <div className="flex-1 border-2 border-white/20 rounded min-h-[76px] px-3 py-2">
                 <p className="font-roboto text-[15px] text-white/30 leading-5">Add a comment...</p>
               </div>

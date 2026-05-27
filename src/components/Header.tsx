@@ -1,15 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Menu, User, Mail, Lock, LogOut, Pencil, UserRound } from 'lucide-react'
+import { Menu, User, Mail, Lock, LogOut, Pencil, UserRound, Search, Bell, MessageSquare, Users } from 'lucide-react'
 import { useAuthStore, useSearchStore } from '../store'
 import { supabase } from '../services/supabase'
 import { PfpCropModal } from './PfpCropModal'
 import { NotificationsPanel } from './NotificationsPanel'
 import { CreatePostModal } from './CreatePostModal'
-
-const imgSearch = 'https://www.figma.com/api/mcp/asset/40eabe15-b606-4e1c-9e6a-08d2af1cbc06'
-const imgBell = 'https://www.figma.com/api/mcp/asset/0166b32e-2102-42e3-ab0c-ce57824eeeb0'
-const imgMessageComment = 'https://www.figma.com/api/mcp/asset/bc2c667c-faa3-4d00-9e97-3961532d2f9f'
 
 type ActivePanel = null | 'email' | 'password'
 
@@ -85,8 +81,8 @@ export function Header() {
         <Link to="/" className="font-roboto font-bold text-white text-2xl leading-none whitespace-nowrap">
           SaveSlot
         </Link>
-        <div className="flex items-center gap-2 bg-white border-2 border-black/80 rounded px-2 w-[400px] h-9">
-          <img src={imgSearch} alt="search" className="w-6 h-6 shrink-0" />
+        <div className="flex items-center gap-2 bg-white border-2 border-black/80 rounded px-3 w-[400px] h-9">
+          <Search className="w-5 h-5 text-black/40 shrink-0" />
           <input
             type="text"
             placeholder="Search games..."
@@ -104,9 +100,9 @@ export function Header() {
 
       {/* Nav */}
       <nav className="font-roboto text-[15px] text-white flex gap-6 shrink-0 h-full items-center">
-<Link to="/games" className={`h-10 px-2 flex items-center border-b-2 transition-all ${window.location.pathname === '/games' ? 'border-[#773877] text-[#773877]' : 'border-transparent hover:border-[#773877] hover:text-[#773877]'}`}>GAMES</Link>
+        <Link to="/games" className={`h-10 px-2 flex items-center border-b-2 transition-all ${window.location.pathname === '/games' ? 'border-[#773877] text-[#773877]' : 'border-transparent hover:border-[#773877] hover:text-[#773877]'}`}>GAMES</Link>
         <Link to="#" className="h-10 px-2 flex items-center border-b-2 border-transparent hover:border-[#773877] hover:text-[#773877] transition-all">MEMBERS</Link>
-        <Link to="#" className="h-10 px-2 flex items-center border-b-2 border-transparent hover:border-[#773877] hover:text-[#773877] transition-all">WHAT'S NEW?</Link>
+        <Link to="/upcoming" className={`h-10 px-2 flex items-center border-b-2 transition-all ${window.location.pathname === '/upcoming' ? 'border-[#773877] text-[#773877]' : 'border-transparent hover:border-[#773877] hover:text-[#773877]'}`}>WHAT'S NEW?</Link>
       </nav>
 
       {/* Actions */}
@@ -118,19 +114,17 @@ export function Header() {
             className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${showNotif ? 'bg-white/10' : 'hover:bg-white/10'}`}
             aria-label="Notifications"
           >
-            <img src={imgBell} alt="notifications" className="w-6 h-6" />
+            <Bell className={`w-5 h-5 ${showNotif ? 'text-[#c77fc7]' : 'text-white'}`} />
           </button>
           {showNotif && <NotificationsPanel onClose={() => setShowNotif(false)} />}
         </div>
 
         <button
           onClick={() => setShowPostModal(true)}
-          className="flex items-center gap-2 bg-white/80 rounded px-3 py-2 hover:bg-[#773877] transition-colors"
+          className="flex items-center gap-2 bg-white/80 rounded px-4 py-2 hover:bg-[#773877] hover:text-white transition-all group"
         >
-          <div className="relative w-5 h-5 overflow-visible">
-            <img src={imgMessageComment} alt="" className="absolute w-6 h-6 -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" />
-          </div>
-          <span className="font-roboto font-medium text-[#564242] text-[15px] whitespace-nowrap">New Post</span>
+          <MessageSquare className="w-5 h-5 text-[#564242] group-hover:text-white transition-colors" />
+          <span className="font-roboto font-medium text-[#564242] group-hover:text-white text-[15px] whitespace-nowrap">New Post</span>
         </button>
 
         {/* Hamburger menu */}
@@ -179,6 +173,17 @@ export function Header() {
                       <UserRound className="w-4 h-4 shrink-0 text-[#c77fc7]" />
                       <span className="font-roboto text-white font-semibold text-sm truncate">{username}</span>
                     </Link>
+
+                    {/* Find a friend */}
+                    <Link
+                      to="/friends"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors group"
+                    >
+                      <Users className="w-4 h-4 shrink-0 text-[#c77fc7]" />
+                      <span className="font-roboto text-white font-semibold text-sm truncate">Find a friend</span>
+                    </Link>
+
                     <div className="border-t border-white/10 mx-4 mb-1" />
 
                     {/* Edit Email */}
@@ -251,8 +256,8 @@ export function Header() {
                 </>
               ) : (
                 <div className="flex flex-col py-1">
-                  <Link to="/auth" onClick={() => setMenuOpen(false)} className="px-4 py-3 text-white/80 hover:text-white hover:bg-white/5 transition-colors text-sm font-roboto">Sign In</Link>
-                  <Link to="/auth" onClick={() => setMenuOpen(false)} className="px-4 py-3 text-white/80 hover:text-white hover:bg-white/5 transition-colors text-sm font-roboto">Create Account</Link>
+                  <Link to="/auth" state={{ isLogin: true }} onClick={() => setMenuOpen(false)} className="px-4 py-3 text-white/80 hover:text-white hover:bg-white/5 transition-colors text-sm font-roboto">Sign In</Link>
+                  <Link to="/auth" state={{ isLogin: false }} onClick={() => setMenuOpen(false)} className="px-4 py-3 text-white/80 hover:text-white hover:bg-white/5 transition-colors text-sm font-roboto">Create Account</Link>
                 </div>
               )}
             </div>

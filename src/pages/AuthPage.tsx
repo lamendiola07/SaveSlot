@@ -2,22 +2,21 @@ import { useState } from 'react'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 import { Sidebar } from '../components/Sidebar'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '../services/supabase'
 import { ALL_GAMES } from '../data/games'
+import { ArrowRight, ChevronRight, Image as ImageIcon } from 'lucide-react'
 
-const imgMcBg = 'https://www.figma.com/api/mcp/asset/22658344-f632-4b41-ab45-55187c980834'
-const imgImageFile = 'https://www.figma.com/api/mcp/asset/aa890ee0-d73e-4427-9ed7-e34839008ab8'
-const imgArrowRight = 'https://www.figma.com/api/mcp/asset/6e8a0c26-cf21-4ea5-8b28-c87b57815d38'
-const imgChevronRight = 'https://www.figma.com/api/mcp/asset/58d0fb28-93b9-48e1-8294-24a54697d2fd'
+const imgMcBg = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070&auto=format&fit=crop'
 
 import { GameCard } from '../components/GameCard'
 
 const upcomingGames = ALL_GAMES.slice(0, 4)
 
 function AuthModal({ onClose }: { onClose: () => void }) {
-  const [isLogin, setIsLogin] = useState(false)
+  const location = useLocation()
+  const [isLogin, setIsLogin] = useState(location.state?.isLogin ?? false)
   const [formData, setFormData] = useState({ email: '', username: '', password: '', accept: false })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -219,7 +218,7 @@ export function AuthPage({ onClose }: { onClose: () => void }) {
           <p className="font-roboto text-xl text-black/80 whitespace-nowrap">UPCOMING GAMES</p>
           <button className="flex items-center gap-1 font-roboto font-medium text-[15px] text-black/80 hover:underline">
             See all
-            <img src={imgArrowRight} alt="" className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
         <div className="flex gap-6">
@@ -234,7 +233,7 @@ export function AuthPage({ onClose }: { onClose: () => void }) {
             </button>
           ))}
           <button className="w-9 h-9 rounded bg-white flex items-center justify-center hover:bg-gray-100">
-            <img src={imgChevronRight} alt="Next" className="w-5 h-5" />
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </section>
@@ -266,7 +265,7 @@ export function AuthPage({ onClose }: { onClose: () => void }) {
             <div key={row} className="flex items-start gap-6 py-6 border-b border-black/20 group cursor-pointer">
               <div className="bg-[#eee] border-2 border-black/80 rounded overflow-hidden shrink-0 flex items-center justify-center group-hover:border-black transition-colors"
                 style={{ width: 235, height: 272 }}>
-                <img src={imgImageFile} alt="" className="w-16 h-16" />
+                <ImageIcon className="w-16 h-16 text-black/20" />
               </div>
               <div className="flex flex-col gap-2 flex-1 min-w-0 pt-2">
                 <p className="font-roboto font-medium text-[32px] text-black/80 overflow-hidden text-ellipsis whitespace-nowrap group-hover:text-black">

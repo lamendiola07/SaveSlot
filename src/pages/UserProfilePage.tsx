@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   User, Heart, LayoutGrid, Calendar, MoreHorizontal, Pencil,
-  Trash2, Gamepad2, Camera, Star, MessageCircle, Repeat2,
+  Trash2, Gamepad2, Camera, Star, MessageCircle, Repeat2
 } from 'lucide-react'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'

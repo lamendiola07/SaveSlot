@@ -155,6 +155,71 @@ export const usePostsStore = create<PostsState>((set) => ({
   },
 }))
 
+export interface Friend {
+  id: string
+  username: string
+  pfpUrl: string | null
+  status: 'Online' | 'Offline' | 'In-game' | 'Away'
+}
+
+export interface ChatMessage {
+  id: string
+  senderId: string
+  receiverId: string
+  content: string
+  createdAt: string
+}
+
+interface FriendsState {
+  friends: Friend[]
+  messages: ChatMessage[]
+  addFriend: (friend: Friend) => void
+  removeFriend: (friendId: string) => void
+  sendMessage: (senderId: string, receiverId: string, content: string) => void
+}
+
+const FRIENDS_KEY = 'saveslot_friends'
+const MESSAGES_KEY = 'saveslot_messages'
+
+function loadFriends(): Friend[] {
+  try { return JSON.parse(localStorage.getItem(FRIENDS_KEY) || '[]') } catch { return [] }
+}
+
+function loadMessages(): ChatMessage[] {
+  try { return JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]') } catch { return [] }
+}
+
+export const useFriendsStore = create<FriendsState>((set) => ({
+  friends: loadFriends(),
+  messages: loadMessages(),
+
+  addFriend: (friend) => set(state => {
+    if (state.friends.some(f => f.id === friend.id)) return state
+    const friends = [...state.friends, friend]
+    localStorage.setItem(FRIENDS_KEY, JSON.stringify(friends))
+    return { friends }
+  }),
+
+  removeFriend: (friendId) => set(state => {
+    const friends = state.friends.filter(f => f.id !== friendId)
+    localStorage.setItem(FRIENDS_KEY, JSON.stringify(friends))
+    return { friends }
+  }),
+
+  sendMessage: (senderId, receiverId, content) => set(state => {
+    const msg: ChatMessage = {
+      id: crypto.randomUUID(),
+      senderId,
+      receiverId,
+      content,
+      createdAt: new Date().toISOString(),
+    }
+    const messages = [...state.messages, msg]
+    localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages))
+    return { messages }
+  }),
+}))
+
 interface AuthState {
   user: User | null
   isAuthenticated: boolean

@@ -9,9 +9,9 @@ import { useSearchStore } from '../store'
 import { GameCard } from '../components/GameCard'
 
 const BACKGROUNDS = [
-  'https://www.figma.com/api/mcp/asset/b43ca7e4-f677-4796-8378-ee5d25b13689', // Minecraft
   'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070&auto=format&fit=crop', // Gaming setup
   'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=2071&auto=format&fit=crop', // Abstract gaming
+  'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop', // Retro gaming
 ]
 
 function Pagination({ activePage, totalPages, onPageChange }: { activePage: number; totalPages: number; onPageChange: (p: number) => void }) {
@@ -111,7 +111,10 @@ export function StartupPage() {
           </div>
 
           <div className="w-[300px]">
-            <button className="w-full h-16 bg-[#45413e] hover:bg-[#5a5653] transition-all rounded-[10px] font-roboto text-white text-2xl flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95">
+            <button 
+              onClick={() => navigate('/auth', { state: { isLogin: false } })}
+              className="w-full h-16 bg-[#45413e] hover:bg-[#5a5653] transition-all rounded-[10px] font-roboto text-white text-2xl flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95"
+            >
               Get started - it's free!
             </button>
           </div>
@@ -123,7 +126,7 @@ export function StartupPage() {
 
         <div className="absolute right-8 bottom-24 flex items-center justify-center w-8 h-[185px]">
           <p className="-rotate-90 font-roboto text-white text-xl opacity-60 whitespace-pre origin-center">
-            {'MINECRAFT  1.26.1'}
+            {'SAVED GAMES & MORE'}
           </p>
         </div>
       </section>
@@ -257,9 +260,16 @@ export function StartupPage() {
                     <img src={game.img} alt={game.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                   </div>
                   <div className="flex flex-col gap-4 flex-1">
-                    <p className="font-roboto text-4xl text-white/80 group-hover:text-white transition-colors">
-                      {game.title}
-                    </p>
+                    <div className="flex items-center gap-3">
+                      <p className="font-roboto text-4xl text-white/80 group-hover:text-white transition-colors">
+                        {game.title}
+                      </p>
+                      {game.rating && (
+                        <span className="bg-white/10 px-3 py-1 rounded-lg text-white text-sm font-bold border border-white/20">
+                          {game.rating}
+                        </span>
+                      )}
+                    </div>
                     <p className="font-roboto text-lg text-white/60 leading-relaxed line-clamp-3">
                       {game.desc || 'Join millions of players in exploring this top-rated title. Check out reviews, gameplay videos, and more to see why it\'s trending this week.'}
                     </p>
