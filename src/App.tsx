@@ -36,6 +36,7 @@ export default function App() {
         <Route path="/popular" element={<GamesPage forceType="popular" />} />
         <Route path="/game/:id" element={<GameDetailPage />} />
         <Route path="/profile" element={<UserProfilePage />} />
+        <Route path="/profile/:userId" element={<UserProfilePage />} />
         <Route path="/friends" element={<FriendsPage />} />
       </Routes>
     </Router>
