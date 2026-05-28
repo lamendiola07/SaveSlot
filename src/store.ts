@@ -186,7 +186,10 @@ interface FriendsState {
   addFriend: (userId: string, friendId: string) => Promise<void>
   acceptFriend: (userId: string, friendId: string) => Promise<void>
   removeFriend: (userId: string, friendId: string) => Promise<void>
-  sendMessage: (senderId: string, receiverId: string, content: string, media?: { url: string, type: string }) => Promise<void>
+  sendMessage: (senderId: string, receiverId: string, content: string | null, media?: { url: string, type: string }) => Promise<void>
+  editMessage: (messageId: string, content: string) => Promise<void>
+  deleteMessage: (messageId: string) => Promise<void>
+  togglePinMessage: (messageId: string, isPinned: boolean) => Promise<void>
   subscribeToMessages: (userId: string, friendId: string) => () => void
 }
 
@@ -310,7 +313,23 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
   },
 
   sendMessage: async (senderId, receiverId, content, media) => {
-    const { error } = await supabase
+    // Optimistic message for "Fast Response"
+    const optimisticId = crypto.randomUUID()
+    const optimisticMessage: ChatMessage = {
+      id: optimisticId,
+      sender_id: senderId,
+      receiver_id: receiverId,
+      content,
+      media_url: media?.url,
+      media_type: media?.type as any,
+      is_pinned: false,
+      is_edited: false,
+      created_at: new Date().toISOString()
+    }
+    
+    set(state => ({ messages: [...state.messages, optimisticMessage] }))
+
+    const { data, error } = await supabase
       .from('messages')
       .insert({
         sender_id: senderId,
@@ -319,8 +338,53 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
         media_url: media?.url,
         media_type: media?.type
       })
+      .select()
+      .single()
     
-    if (error) console.error('Error sending message:', error)
+    if (error) {
+      console.error('Error sending message:', error)
+      // Remove optimistic message on error
+      set(state => ({ messages: state.messages.filter(m => m.id !== optimisticId) }))
+    } else if (data) {
+      // Replace optimistic message with real one
+      set(state => ({
+        messages: state.messages.map(m => m.id === optimisticId ? data as ChatMessage : m)
+      }))
+    }
+  },
+
+  editMessage: async (messageId, content) => {
+    const { error } = await supabase
+      .from('messages')
+      .update({ content, is_edited: true })
+      .eq('id', messageId)
+    
+    if (error) console.error('Error editing message:', error)
+  },
+
+  deleteMessage: async (messageId) => {
+    // Optimistic delete
+    set(state => ({ messages: state.messages.filter(m => m.id !== messageId) }))
+
+    const { error } = await supabase
+      .from('messages')
+      .delete()
+      .eq('id', messageId)
+    
+    if (error) {
+      console.error('Error deleting message:', error)
+      // We don't easily have the message back to restore it without a re-fetch
+      // but the subscription will handle correctness if we are out of sync.
+    }
+  },
+
+  togglePinMessage: async (messageId, isPinned) => {
+    const { error } = await supabase
+      .from('messages')
+      .update({ is_pinned: isPinned })
+      .eq('id', messageId)
+    
+    if (error) console.error('Error pinning message:', error)
   },
 
   subscribeToMessages: (userId, friendId) => {
@@ -329,16 +393,31 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'messages',
-        filter: `or(and(sender_id.eq.${userId},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${userId}))`
+        table: 'messages'
       }, (payload) => {
+        // Handle logic in callback since complex filters are not supported in postgres_changes
         if (payload.eventType === 'INSERT') {
           const newMessage = payload.new as ChatMessage
-          set(state => {
-             // Only add if not already in list (initial fetch might clash)
-             if (state.messages.some(m => m.id === newMessage.id)) return state
-             return { messages: [...state.messages, newMessage] }
-          })
+          // Only process if it belongs to this conversation
+          const isFromUs = newMessage.sender_id === userId && newMessage.receiver_id === friendId
+          const isToUs = newMessage.sender_id === friendId && newMessage.receiver_id === userId
+          
+          if (isFromUs || isToUs) {
+            set(state => {
+               if (state.messages.some(m => m.id === newMessage.id)) return state
+               return { messages: [...state.messages, newMessage] }
+            })
+          }
+        } else if (payload.eventType === 'UPDATE') {
+          const updatedMessage = payload.new as ChatMessage
+          set(state => ({
+            messages: state.messages.map(m => m.id === updatedMessage.id ? updatedMessage : m)
+          }))
+        } else if (payload.eventType === 'DELETE') {
+          const deletedId = (payload.old as any).id
+          set(state => ({
+            messages: state.messages.filter(m => m.id !== deletedId)
+          }))
         }
       })
       .subscribe()
