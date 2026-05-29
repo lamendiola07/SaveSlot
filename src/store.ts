@@ -499,6 +499,8 @@ interface GameCommentsState {
   addComment: (gameId: string, userId: string, content: string) => Promise<void>
   likeComment: (commentId: string, userId: string) => Promise<void>
   dislikeComment: (commentId: string, userId: string) => Promise<void>
+  editComment: (commentId: string, content: string) => Promise<void>
+  deleteComment: (commentId: string) => Promise<void>
   addReply: (gameId: string, parentId: string, userId: string, content: string) => Promise<void>
 }
 
@@ -506,7 +508,7 @@ export const useGameCommentsStore = create<GameCommentsState>((set, get) => ({
   comments: [],
   loading: false,
   hasMore: true,
-
+  // ... rest of implementation will be updated
   fetchComments: async (gameId, lastCreatedAt) => {
     set({ loading: true })
     let query = supabase
@@ -607,6 +609,22 @@ export const useGameCommentsStore = create<GameCommentsState>((set, get) => ({
     if (error) {
       console.error('Error disliking comment:', error)
     }
+  },
+
+  editComment: async (commentId, content) => {
+    set(state => ({
+      comments: state.comments.map(c => c.id === commentId ? { ...c, content } : c)
+    }))
+    const { error } = await supabase.from('game_comments').update({ content }).eq('id', commentId)
+    if (error) console.error('Error editing comment:', error)
+  },
+
+  deleteComment: async (commentId) => {
+    set(state => ({
+      comments: state.comments.filter(c => c.id !== commentId && c.parent_id !== commentId)
+    }))
+    const { error } = await supabase.from('game_comments').delete().eq('id', commentId)
+    if (error) console.error('Error deleting comment:', error)
   },
 
   addReply: async (gameId, parentId, userId, content) => {
