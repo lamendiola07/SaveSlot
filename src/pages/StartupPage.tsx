@@ -64,8 +64,10 @@ export function StartupPage() {
   })
 
   const { games: popularGames, loading: loadingPopular } = useGames({
-    pageSize: 2,
-    ordering: '-metacritic'
+    pageSize: 3,
+    ordering: '-added',
+    dates: '2023-01-01,2025-12-31',
+    metacritic: '85,100'
   })
 
   const totalUpcomingPages = Math.min(5, Math.ceil(totalUpcoming / itemsPerPage))

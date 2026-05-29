@@ -508,7 +508,7 @@ export const useGameCommentsStore = create<GameCommentsState>((set, get) => ({
   comments: [],
   loading: false,
   hasMore: true,
-  // ... rest of implementation will be updated
+  
   fetchComments: async (gameId, lastCreatedAt) => {
     set({ loading: true })
     let query = supabase
@@ -662,8 +662,10 @@ interface SearchState {
   query: string
   ordering?: string
   dates?: string
+  genres?: string
+  metacritic?: string
   setQuery: (query: string) => void
-  setFilters: (filters: { ordering?: string; dates?: string }) => void
+  setFilters: (filters: { ordering?: string; dates?: string; genres?: string; metacritic?: string }) => void
   clearFilters: () => void
 }
 
@@ -671,7 +673,9 @@ export const useSearchStore = create<SearchState>((set) => ({
   query: '',
   ordering: undefined,
   dates: undefined,
+  genres: undefined,
+  metacritic: undefined,
   setQuery: (query) => set({ query }),
   setFilters: (filters) => set(filters),
-  clearFilters: () => set({ query: '', ordering: undefined, dates: undefined }),
+  clearFilters: () => set({ query: '', ordering: undefined, dates: undefined, genres: undefined, metacritic: undefined }),
 }))

@@ -11,20 +11,24 @@ import { GameCard } from '../components/GameCard'
 const GAMES_PER_PAGE = 8
 
 export function GamesPage({ forceType }: { forceType?: 'upcoming' | 'popular' }) {
-  const { query, ordering: storeOrdering, dates: storeDates } = useSearchStore()
+  const { query, ordering: storeOrdering, dates: storeDates, genres: storeGenres, metacritic: storeMetacritic } = useSearchStore()
   const [currentPage, setCurrentPage] = useState(1)
   const navigate = useNavigate()
 
   // Use forced filters if on a specific route, otherwise use store values
   const ordering = forceType === 'upcoming' ? '-released' : forceType === 'popular' ? '-metacritic' : storeOrdering
   const dates = forceType === 'upcoming' ? '2024-01-01,2026-12-31' : forceType === 'popular' ? undefined : storeDates
+  const genres = forceType ? undefined : storeGenres
+  const metacritic = forceType ? undefined : storeMetacritic
   
   const { games, loading, error, totalCount } = useGames({ 
     query, 
     page: currentPage, 
     pageSize: GAMES_PER_PAGE,
     ordering,
-    dates
+    dates,
+    genres,
+    metacritic
   })
 
   const totalPages = Math.ceil(totalCount / GAMES_PER_PAGE)

@@ -8,9 +8,11 @@ interface UseGamesProps {
   pageSize?: number
   ordering?: string
   dates?: string
+  genres?: string
+  metacritic?: string
 }
 
-export function useGames({ query, page = 1, pageSize = 8, ordering, dates }: UseGamesProps = {}) {
+export function useGames({ query, page = 1, pageSize = 8, ordering, dates, genres, metacritic }: UseGamesProps = {}) {
   const [games, setGames] = useState<Game[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -37,6 +39,8 @@ export function useGames({ query, page = 1, pageSize = 8, ordering, dates }: Use
       if (debouncedQuery) params.search = debouncedQuery
       if (ordering) params.ordering = ordering
       if (dates) params.dates = dates
+      if (genres) params.genres = genres
+      if (metacritic) params.metacritic = metacritic
 
       const { games: fetchedGames, count } = await fetchRawgGames(params)
       setGames(fetchedGames)
@@ -46,7 +50,7 @@ export function useGames({ query, page = 1, pageSize = 8, ordering, dates }: Use
     } finally {
       setLoading(false)
     }
-  }, [debouncedQuery, page, pageSize, ordering, dates])
+  }, [debouncedQuery, page, pageSize, ordering, dates, genres, metacritic])
 
   useEffect(() => {
     loadGames()

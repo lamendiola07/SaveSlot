@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
-import { Star, ThumbsUp, ThumbsDown, MessageSquare, User, Send, MoreVertical, Pencil, Trash2} from 'lucide-react'
+import { Star, ThumbsUp, ThumbsDown, MessageSquare, User, Send, MoreVertical, Pencil, Trash2, X } from 'lucide-react'
 import { Game } from '../types/game'
 import { fetchRawgGameDetail } from '../services/rawgApi'
 import { useAuthStore, useGameCommentsStore, GameComment } from '../store'
@@ -540,4 +540,3 @@ export function GameDetailPage() {
     </div>
   )
 }
-

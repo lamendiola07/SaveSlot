@@ -453,7 +453,6 @@ export function FriendsPage() {
       <Header />
       
       <main className="flex-1 max-w-[1280px] mx-auto w-full px-20 py-5 flex gap-5">
-        {/* ... (Left Column remains same) ... */}
         <div className="w-[400px] flex flex-col gap-6">
           {/* Find Friends */}
           <div className="bg-[#42135b] rounded-xl p-4 shadow-xl border border-white/5">
