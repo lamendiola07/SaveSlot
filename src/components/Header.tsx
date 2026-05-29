@@ -273,9 +273,9 @@ export function Header() {
                   </div>
                 </>
               ) : (
-                <div className="flex flex-col py-1">
-                  <Link to="/auth" state={{ isLogin: true }} onClick={() => setMenuOpen(false)} className="px-4 py-3 text-white/80 hover:text-white hover:bg-white/5 transition-colors text-sm font-roboto">Sign In</Link>
-                  <Link to="/auth" state={{ isLogin: false }} onClick={() => setMenuOpen(false)} className="px-4 py-3 text-white/80 hover:text-white hover:bg-white/5 transition-colors text-sm font-roboto">Create Account</Link>
+                <div className="flex flex-col p-2 gap-2">
+                  <Link to="/auth" state={{ isLogin: true }} onClick={() => setMenuOpen(false)} className="w-full bg-[#773877] hover:bg-[#8f4a8f] text-white text-center font-roboto font-bold py-2.5 rounded-lg transition-colors shadow-lg">Sign In</Link>
+                  <Link to="/auth" state={{ isLogin: false }} onClick={() => setMenuOpen(false)} className="w-full bg-white/10 hover:bg-white/20 text-white text-center font-roboto font-medium py-2.5 rounded-lg transition-colors">Create Account</Link>
                 </div>
               )}
             </div>

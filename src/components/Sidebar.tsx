@@ -15,6 +15,7 @@ export function Sidebar() {
   }, [user, fetchFriends])
 
   const handleChat = (friendId: string) => {
+    console.log('Navigating to chat with:', friendId)
     navigate('/friends')
     // We could add logic to select the friend in the friends store here
   }
