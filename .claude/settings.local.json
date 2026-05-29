@@ -12,7 +12,9 @@
       "Bash(Select-Object -First 50)",
       "Bash(Format-Table FullName)",
       "Bash(Find \"C:\\\\Users\\\\xterm\\\\saveslot\\\\src\" -type f -name \"*.ts\" -o -name \"*.tsx\")",
-      "Bash(Sort)"
+      "Bash(Sort)",
+      "Bash(copy \"C:\\\\Users\\\\xterm\\\\saveslot\\\\SaveSlotLogo.png\" \"C:\\\\Users\\\\xterm\\\\saveslot\\\\public\\\\SaveSlotLogo.png\")",
+      "Bash(node *)"
     ]
   }
 }

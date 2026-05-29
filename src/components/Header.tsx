@@ -96,8 +96,13 @@ export function Header() {
     <header className="relative flex items-center gap-16 px-12 py-3 bg-transparent z-50">
       {/* Logo + Search */}
       <div className="flex items-center gap-8 shrink-0 w-[554px]">
-        <Link to="/" className="font-roboto font-bold text-white text-2xl leading-none whitespace-nowrap">
-          SaveSlot
+        <Link to="/" className="block relative overflow-hidden shrink-0" style={{ width: 255, height: 58 }}>
+          <img
+            src="/SaveSlotLogo.png"
+            alt="SaveSlot"
+            className="absolute"
+            style={{ width: 5000, height: 320, top: -129, left: -48 }}
+          />
         </Link>
         <div className="flex items-center gap-2 bg-white border-2 border-black/80 rounded px-3 w-[400px] h-9">
           <Search className="w-5 h-5 text-black/40 shrink-0" />
