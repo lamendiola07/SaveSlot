@@ -44,9 +44,27 @@ export function Header() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const handlePfpSave = (url: string) => {
+  useEffect(() => {
+    if (!user?.id) return
+    supabase
+      .from('profiles')
+      .select('pfp_url')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.pfp_url) {
+          setPfpUrl(data.pfp_url)
+          localStorage.setItem(`pfp_${user.id}`, data.pfp_url)
+        }
+      })
+  }, [user?.id])
+
+  const handlePfpSave = async (url: string) => {
     setPfpUrl(url)
-    if (user?.id) localStorage.setItem(`pfp_${user.id}`, url)
+    if (user?.id) {
+      localStorage.setItem(`pfp_${user.id}`, url)
+      await supabase.from('profiles').update({ pfp_url: url }).eq('id', user.id)
+    }
   }
 
   const handleLogout = async () => {

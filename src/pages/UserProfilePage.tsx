@@ -1,12 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   User, Heart, LayoutGrid, Calendar, MoreHorizontal, Pencil,
   Trash2, Gamepad2, Camera, Star, MessageCircle, Repeat2
 } from 'lucide-react'
+
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 import { PfpCropModal } from '../components/PfpCropModal'
+import { CoverCropModal } from '../components/CoverCropModal'
 import { useAuthStore, usePostsStore } from '../store'
 import { supabase } from '../services/supabase'
 
@@ -28,14 +30,6 @@ function ratingColor(score: number) {
   return 'bg-red-500/20 text-red-400 border-red-500/30'
 }
 
-function readAsDataURL(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-}
 
 export function UserProfilePage() {
   const { user: currentUser, isAuthenticated } = useAuthStore()
@@ -47,6 +41,7 @@ export function UserProfilePage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [showCropModal, setShowCropModal] = useState(false)
+  const [showCoverModal, setShowCoverModal] = useState(false)
 
   // Post interaction state
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
@@ -55,7 +50,6 @@ export function UserProfilePage() {
   const [openCommentsId, setOpenCommentsId] = useState<string | null>(null)
   const [commentTexts, setCommentTexts] = useState<Record<string, string>>({})
 
-  const coverInputRef = useRef<HTMLInputElement>(null)
 
   const isOwnProfile = !userId || userId === currentUser?.id
   const targetUserId = userId || currentUser?.id
@@ -74,11 +68,12 @@ export function UserProfilePage() {
         .select('*')
         .eq('id', targetUserId)
         .single()
-      
+
       if (error) {
         console.error('Error fetching profile:', error)
       } else {
-        setProfile(data)
+        const localCover = localStorage.getItem(`cover_${targetUserId}`)
+        setProfile({ ...data, cover_url: localCover || data.cover_url || null })
       }
       setLoading(false)
     }
@@ -86,26 +81,19 @@ export function UserProfilePage() {
     fetchProfile()
   }, [targetUserId, isAuthenticated, userId, navigate])
 
-  const handlePfpSave = async (url: string) => {
+  const handlePfpSave = async (dataUrl: string) => {
     if (!currentUser) return
-    const { error } = await supabase
-      .from('profiles')
-      .update({ pfp_url: url })
-      .eq('id', currentUser.id)
-    
-    if (!error) setProfile({ ...profile, pfp_url: url })
+    localStorage.setItem(`pfp_${currentUser.id}`, dataUrl)
+    setProfile({ ...profile, pfp_url: dataUrl })
+    await supabase.from('profiles').update({ pfp_url: dataUrl }).eq('id', currentUser.id)
   }
 
-  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file || !currentUser) return
-    const url = await readAsDataURL(file)
-    const { error } = await supabase
-      .from('profiles')
-      .update({ cover_url: url })
-      .eq('id', currentUser.id)
-    
-    if (!error) setProfile({ ...profile, cover_url: url })
+  const handleCoverSave = async (dataUrl: string): Promise<void> => {
+    if (!currentUser) return
+    localStorage.setItem(`cover_${currentUser.id}`, dataUrl)
+    setProfile({ ...profile, cover_url: dataUrl })
+    // Best-effort Supabase persist (silent if column doesn't exist yet)
+    supabase.from('profiles').update({ cover_url: dataUrl }).eq('id', currentUser.id)
   }
 
   // Filter posts for the profile being viewed
@@ -176,18 +164,15 @@ export function UserProfilePage() {
             )
           }
           {isOwnProfile && (
-            <>
-              <button
-                onClick={() => coverInputRef.current?.click()}
-                className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-colors"
-              >
-                <span className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-xl px-4 py-2">
-                  <Camera className="w-4 h-4 text-white" />
-                  <span className="font-roboto text-white text-sm font-medium">Edit Cover Photo</span>
-                </span>
-              </button>
-              <input ref={coverInputRef} type="file" accept="image/*" onChange={handleCoverChange} className="hidden" />
-            </>
+            <button
+              onClick={() => setShowCoverModal(true)}
+              className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-colors"
+            >
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-xl px-4 py-2">
+                <Camera className="w-4 h-4 text-white" />
+                <span className="font-roboto text-white text-sm font-medium">Edit Cover Photo</span>
+              </span>
+            </button>
           )}
         </div>
 
@@ -470,6 +455,10 @@ export function UserProfilePage() {
 
       {showCropModal && (
         <PfpCropModal onClose={() => setShowCropModal(false)} onSave={handlePfpSave} />
+      )}
+
+      {showCoverModal && (
+        <CoverCropModal onClose={() => setShowCoverModal(false)} onSave={handleCoverSave} />
       )}
     </div>
   )
