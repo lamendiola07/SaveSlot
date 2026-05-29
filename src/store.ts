@@ -170,9 +170,25 @@ export interface ChatMessage {
   content: string | null
   media_url?: string | null
   media_type?: 'image' | 'video' | 'file' | 'gif' | null
+  reactions: Record<string, string[]> // emoji -> array of user_ids
   is_pinned: boolean
   is_edited: boolean
   created_at: string
+}
+
+export interface GameComment {
+  id: string
+  game_id: string
+  user_id: string
+  content: string
+  parent_id?: string | null
+  liked_by?: string[]
+  disliked_by?: string[]
+  created_at: string
+  profiles?: {
+    username: string
+    pfp_url: string | null
+  }
 }
 
 interface FriendsState {
@@ -187,6 +203,7 @@ interface FriendsState {
   acceptFriend: (userId: string, friendId: string) => Promise<void>
   removeFriend: (userId: string, friendId: string) => Promise<void>
   sendMessage: (senderId: string, receiverId: string, content: string | null, media?: { url: string, type: string }) => Promise<void>
+  addReaction: (messageId: string, userId: string, emoji: string) => Promise<void>
   editMessage: (messageId: string, content: string) => Promise<void>
   deleteMessage: (messageId: string) => Promise<void>
   togglePinMessage: (messageId: string, isPinned: boolean) => Promise<void>
@@ -219,9 +236,9 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
         .filter(f => f.status === 'accepted')
         .map(f => {
           if (!f.friend || !f.user) return null
-          return f.friend.id === userId ? f.user : f.friend
+          return (f.friend as any).id === userId ? f.user : f.friend
         })
-        .filter(Boolean) as Friend[]
+        .filter(Boolean) as unknown as Friend[]
       
       // Extract pending requests where current user is the receiver
       const requestsList = data
@@ -243,9 +260,11 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
       .neq('id', userId)
 
     if (query.trim()) {
-      supabaseQuery = supabaseQuery.ilike('username', `%${query.trim()}%`)
+      supabaseQuery = supabaseQuery.ilike('username', `%${query.trim()}%`).limit(5)
     } else {
-      supabaseQuery = supabaseQuery.limit(20)
+      // Randomize by fetching more and picking 5, or use a specific order
+      // Supabase JS doesn't have a built-in random(), so we'll use a trick
+      supabaseQuery = supabaseQuery.order('updated_at', { ascending: Math.random() > 0.5 }).limit(5)
     }
 
     const { data: allProfiles, error: profError } = await supabaseQuery
@@ -322,6 +341,7 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
       content,
       media_url: media?.url,
       media_type: media?.type as any,
+      reactions: {},
       is_pinned: false,
       is_edited: false,
       created_at: new Date().toISOString()
@@ -336,7 +356,8 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
         receiver_id: receiverId,
         content,
         media_url: media?.url,
-        media_type: media?.type
+        media_type: media?.type,
+        reactions: {}
       })
       .select()
       .single()
@@ -349,6 +370,39 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
       // Replace optimistic message with real one
       set(state => ({
         messages: state.messages.map(m => m.id === optimisticId ? data as ChatMessage : m)
+      }))
+    }
+  },
+
+  addReaction: async (messageId, userId, emoji) => {
+    const message = get().messages.find(m => m.id === messageId)
+    if (!message) return
+
+    const reactions = message.reactions ? { ...message.reactions } : {}
+    const users = reactions[emoji] || []
+    
+    if (users.includes(userId)) {
+      reactions[emoji] = users.filter(id => id !== userId)
+      if (reactions[emoji].length === 0) delete reactions[emoji]
+    } else {
+      reactions[emoji] = [...users, userId]
+    }
+
+    // Optimistic update
+    set(state => ({
+      messages: state.messages.map(m => m.id === messageId ? { ...m, reactions } : m)
+    }))
+
+    const { error } = await supabase
+      .from('messages')
+      .update({ reactions })
+      .eq('id', messageId)
+
+    if (error) {
+      console.error('Error updating reactions:', error)
+      // Revert if error
+      set(state => ({
+        messages: state.messages.map(m => m.id === messageId ? message : m)
       }))
     }
   },
@@ -434,6 +488,141 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
 
     return () => {
       supabase.removeChannel(channel)
+    }
+  }
+}))
+
+interface GameCommentsState {
+  comments: GameComment[]
+  loading: boolean
+  hasMore: boolean
+  fetchComments: (gameId: string, lastCreatedAt?: string) => Promise<void>
+  addComment: (gameId: string, userId: string, content: string) => Promise<void>
+  likeComment: (commentId: string, userId: string) => Promise<void>
+  dislikeComment: (commentId: string, userId: string) => Promise<void>
+  addReply: (gameId: string, parentId: string, userId: string, content: string) => Promise<void>
+}
+
+export const useGameCommentsStore = create<GameCommentsState>((set, get) => ({
+  comments: [],
+  loading: false,
+  hasMore: true,
+
+  fetchComments: async (gameId, lastCreatedAt) => {
+    set({ loading: true })
+    let query = supabase
+      .from('game_comments')
+      .select('*, profiles(username, pfp_url)')
+      .eq('game_id', gameId)
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (lastCreatedAt) {
+      query = query.lt('created_at', lastCreatedAt)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      console.error('Error fetching comments:', error)
+      set({ loading: false })
+    } else if (data) {
+      const newComments = data as unknown as GameComment[]
+      set(state => ({
+        comments: lastCreatedAt ? [...state.comments, ...newComments] : newComments,
+        hasMore: newComments.length === 50,
+        loading: false
+      }))
+    } else {
+      set({ loading: false })
+    }
+  },
+
+  addComment: async (gameId, userId, content) => {
+    const { data, error } = await supabase
+      .from('game_comments')
+      .insert({ game_id: gameId, user_id: userId, content })
+      .select('*, profiles(username, pfp_url)')
+      .single()
+
+    if (error) {
+      console.error('Error adding comment:', error)
+    } else if (data) {
+      set(state => ({
+        comments: [data as unknown as GameComment, ...state.comments]
+      }))
+    }
+  },
+
+  likeComment: async (commentId, userId) => {
+    const comment = get().comments.find(c => c.id === commentId)
+    if (!comment) return
+
+    const likedBy = comment.liked_by || []
+    const dislikedBy = comment.disliked_by || []
+
+    let newLikedBy = [...likedBy]
+    let newDislikedBy = [...dislikedBy]
+
+    if (newLikedBy.includes(userId)) {
+      newLikedBy = newLikedBy.filter(id => id !== userId)
+    } else {
+      newLikedBy.push(userId)
+      newDislikedBy = newDislikedBy.filter(id => id !== userId)
+    }
+
+    // Optimistic update
+    set(state => ({
+      comments: state.comments.map(c => c.id === commentId ? { ...c, liked_by: newLikedBy, disliked_by: newDislikedBy } : c)
+    }))
+
+    const { error } = await supabase.from('game_comments').update({ liked_by: newLikedBy, disliked_by: newDislikedBy }).eq('id', commentId)
+    if (error) {
+      console.error('Error liking comment:', error)
+    }
+  },
+
+  dislikeComment: async (commentId, userId) => {
+    const comment = get().comments.find(c => c.id === commentId)
+    if (!comment) return
+
+    const likedBy = comment.liked_by || []
+    const dislikedBy = comment.disliked_by || []
+
+    let newLikedBy = [...likedBy]
+    let newDislikedBy = [...dislikedBy]
+
+    if (newDislikedBy.includes(userId)) {
+      newDislikedBy = newDislikedBy.filter(id => id !== userId)
+    } else {
+      newDislikedBy.push(userId)
+      newLikedBy = newLikedBy.filter(id => id !== userId)
+    }
+
+    // Optimistic update
+    set(state => ({
+      comments: state.comments.map(c => c.id === commentId ? { ...c, liked_by: newLikedBy, disliked_by: newDislikedBy } : c)
+    }))
+
+    const { error } = await supabase.from('game_comments').update({ liked_by: newLikedBy, disliked_by: newDislikedBy }).eq('id', commentId)
+    if (error) {
+      console.error('Error disliking comment:', error)
+    }
+  },
+
+  addReply: async (gameId, parentId, userId, content) => {
+    const { data, error } = await supabase
+      .from('game_comments')
+      .insert({ game_id: gameId, parent_id: parentId, user_id: userId, content })
+      .select('*, profiles(username, pfp_url)')
+      .single()
+
+    if (error) {
+      console.error('Error adding reply:', error)
+    } else if (data) {
+      set(state => ({
+        comments: [...state.comments, data as unknown as GameComment]
+      }))
     }
   }
 }))

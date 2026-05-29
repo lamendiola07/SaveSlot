@@ -252,8 +252,6 @@ export function UserProfilePage() {
             ) : (
               <div className="flex flex-col gap-6">
                 {userPosts.map(post => {
-                  const liked = currentUser && post.likedBy.includes(currentUser.id)
-                  const reposted = currentUser && post.repostedBy.includes(currentUser.id)
                   const isEditing = editingId === post.id
                   const isMenuOpen = openMenuId === post.id
                   const commentsOpen = openCommentsId === post.id

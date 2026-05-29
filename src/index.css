@@ -32,4 +32,19 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  .scrollbar-custom::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scrollbar-custom::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+  }
+  .scrollbar-custom::-webkit-scrollbar-thumb {
+    background: #773877;
+    border-radius: 10px;
+  }
+  .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+    background: #8f4a8f;
+  }
 }

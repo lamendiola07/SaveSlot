@@ -5,7 +5,7 @@ import { Footer } from '../components/Footer'
 import { Sidebar } from '../components/Sidebar'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useGames } from '../hooks/useGames'
-import { useSearchStore } from '../store'
+import { useSearchStore, useAuthStore } from '../store'
 import { GameCard } from '../components/GameCard'
 
 const BACKGROUNDS = [
@@ -110,16 +110,18 @@ export function StartupPage() {
             </div>
           </div>
 
-          <div className="w-[300px]">
-            <button 
-              onClick={() => navigate('/auth', { state: { isLogin: false } })}
-              className="w-full h-16 bg-[#45413e] hover:bg-[#5a5653] transition-all rounded-[10px] font-roboto text-white text-2xl flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95"
-            >
-              Get started - it's free!
-            </button>
-          </div>
+          {!useAuthStore.getState().user && (
+            <div className="w-[300px] mb-8">
+              <button 
+                onClick={() => navigate('/auth', { state: { isLogin: false } })}
+                className="w-full h-16 bg-[#45413e] hover:bg-[#5a5653] transition-all rounded-[10px] font-roboto text-white text-2xl flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95"
+              >
+                Get started - it's free!
+              </button>
+            </div>
+          )}
 
-          <div className="mt-8 font-roboto text-[#45413e] text-xl bg-white/30 px-6 py-2 rounded-full backdrop-blur-md">
+          <div className="font-roboto text-[#45413e] text-xl bg-white/30 px-6 py-2 rounded-full backdrop-blur-md">
             The social hub for gamers. Play, Share, and Discover.
           </div>
         </div>

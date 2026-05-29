@@ -4,7 +4,7 @@ import { Footer } from '../components/Footer'
 import { 
   Search, UserPlus, MessageCircle, User, Send, X, ShieldCheck, 
   Trash2, ExternalLink, Check, UserMinus, AlertCircle, MoreVertical, 
-  Pencil, Pin, PinOff, Paperclip, Smile, FileIcon, Film, ImageIcon
+  Pencil, Pin, PinOff, Paperclip, Smile, FileIcon
 } from 'lucide-react'
 import { useAuthStore, useFriendsStore, Friend, ChatMessage } from '../store'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -35,6 +35,7 @@ async function fetchTenorGifs(query: string) {
 }
 
 const EMOJIS = ['😊', '😂', '🔥', '🎮', '🕹️', '❤️', '👍', '🙌', '🎉', '😢', '😮', '🤔', '😎', '💀', '✨']
+const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '😡']
 
 function ConfirmModal({ isOpen, onClose, onConfirm, title, message }: { isOpen: boolean, onClose: () => void, onConfirm: () => void, title: string, message: string }) {
   if (!isOpen) return null
@@ -72,27 +73,51 @@ function ConfirmModal({ isOpen, onClose, onConfirm, title, message }: { isOpen: 
   )
 }
 
+function ReactionPicker({ onSelect, onClose }: { onSelect: (emoji: string) => void, onClose: () => void }) {
+  return (
+    <div className="flex items-center gap-1 bg-[#1e0628] border border-white/10 rounded-full px-2 py-1 shadow-2xl animate-in fade-in zoom-in duration-200">
+      {REACTION_EMOJIS.map(emoji => (
+        <button 
+          key={emoji}
+          onClick={() => { onSelect(emoji); onClose(); }}
+          className="hover:scale-125 transition-transform px-1 text-lg"
+        >
+          {emoji}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function MessageItem({ 
   msg, 
   isOwn, 
+  currentUserId,
   onEdit, 
   onDelete, 
-  onPin 
+  onPin,
+  onReact 
 }: { 
   msg: ChatMessage, 
   isOwn: boolean, 
+  currentUserId: string,
   onEdit: (id: string, content: string) => Promise<void>,
   onDelete: (id: string) => void,
-  onPin: (id: string, isPinned: boolean) => void
+  onPin: (id: string, isPinned: boolean) => void,
+  onReact: (id: string, emoji: string) => void
 }) {
   const [showMenu, setShowMenu] = useState(false)
+  const [showReactions, setShowReactions] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditContent] = useState(msg.content || '')
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowMenu(false)
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false)
+        setShowReactions(false)
+      }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -105,18 +130,39 @@ function MessageItem({
     setIsEditing(false)
   }
 
+  const msgReactions = msg.reactions || {}
+
   return (
-    <div className={`group flex flex-col ${isOwn ? 'items-end' : 'items-start'} relative`}>
+    <div className={`group flex flex-col ${isOwn ? 'items-end' : 'items-start'} relative mb-2`}>
       <div className={`flex items-center gap-2 max-w-[85%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
-        {/* Ellipsis Menu */}
+        {/* Actions Menu */}
         {!isEditing && (
-          <div className="relative" ref={menuRef}>
+          <div className="relative flex items-center gap-1" ref={menuRef}>
+            {/* Reaction Trigger */}
+            <button 
+              onClick={() => setShowReactions(!showReactions)}
+              className="p-1 rounded-full hover:bg-white/10 text-white/20 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+              title="Add reaction"
+            >
+              <Smile className="w-4 h-4" />
+            </button>
+
+            {showReactions && (
+              <div className={`absolute bottom-full mb-2 ${isOwn ? 'right-0' : 'left-0'} z-20`}>
+                <ReactionPicker 
+                  onSelect={(emoji) => onReact(msg.id, emoji)}
+                  onClose={() => setShowReactions(false)}
+                />
+              </div>
+            )}
+
             <button 
               onClick={() => setShowMenu(!showMenu)}
               className="p-1 rounded-full hover:bg-white/10 text-white/20 hover:text-white transition-all opacity-0 group-hover:opacity-100"
             >
               <MoreVertical className="w-4 h-4" />
             </button>
+            
             <AnimatePresence>
               {showMenu && (
                 <motion.div 
@@ -201,6 +247,22 @@ function MessageItem({
               {msg.is_edited && <span className="text-[9px] opacity-40 ml-1">(edited)</span>}
             </>
           )}
+
+          {/* Inline Reactions */}
+          {Object.keys(msgReactions).length > 0 && (
+            <div className={`absolute top-full -mt-2 flex flex-wrap gap-1 ${isOwn ? 'right-2' : 'left-2'} z-10`}>
+              {Object.entries(msgReactions).map(([emoji, users]) => (
+                <button 
+                  key={emoji}
+                  onClick={() => onReact(msg.id, emoji)}
+                  className={`flex items-center gap-1.5 bg-[#1e0628] border border-white/10 rounded-full px-1.5 py-0.5 text-[10px] transition-all hover:border-[#773877] ${users.includes(currentUserId) ? 'border-[#773877] bg-[#773877]/20' : ''}`}
+                >
+                  <span>{emoji}</span>
+                  {users.length > 1 && <span className="text-white/60 font-bold">{users.length}</span>}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       <span className="text-[10px] text-white/20 mt-1 uppercase font-bold px-1">
@@ -224,6 +286,7 @@ export function FriendsPage() {
     acceptFriend,
     removeFriend, 
     sendMessage,
+    addReaction,
     editMessage,
     deleteMessage,
     togglePinMessage,
@@ -244,6 +307,7 @@ export function FriendsPage() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [uploading, setUploading] = useState(false)
   
+  const chatContainerRef = useRef<HTMLDivElement>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
@@ -270,8 +334,15 @@ export function FriendsPage() {
     }
   }, [user, selectedFriend, subscribeToMessages])
 
+  // Auto-scroll logic with "near bottom" check
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const container = chatContainerRef.current
+    if (container) {
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200
+      if (isNearBottom) {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
   }, [messages])
 
   // GIF search
@@ -387,10 +458,18 @@ export function FriendsPage() {
         <div className="w-[400px] flex flex-col gap-6">
           {/* Find Friends */}
           <div className="bg-[#42135b] rounded-2xl p-6 shadow-xl border border-white/5">
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Search className="w-5 h-5 text-[#c77fc7]" />
-              FIND A FRIEND
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <Search className="w-5 h-5 text-[#c77fc7]" />
+                FIND A FRIEND
+              </h2>
+              <button 
+                onClick={() => fetchDiscoverUsers(user.id)}
+                className="text-[10px] font-bold text-white/40 hover:text-white uppercase tracking-widest transition-colors"
+              >
+                Shuffle
+              </button>
+            </div>
             <div className="relative">
               <input 
                 type="text"
@@ -550,7 +629,7 @@ export function FriendsPage() {
                 </div>
 
                 {/* Chat Area */}
-                <div className="flex-1 bg-[#1e0628] rounded-2xl flex flex-col shadow-2xl border border-white/5 overflow-hidden min-h-[500px]">
+                <div className="flex-1 bg-[#1e0628] rounded-2xl flex flex-col shadow-2xl border border-white/5 overflow-hidden min-h-[500px] max-h-[800px]">
                   {/* Pinned Banner */}
                   {pinnedMessages.length > 0 && (
                     <div className="bg-orange-500/10 border-b border-orange-500/20 px-4 py-2 flex items-center gap-3">
@@ -576,20 +655,25 @@ export function FriendsPage() {
                     </button>
                   </div>
 
-                  <div className="flex-1 p-6 overflow-y-auto flex flex-col gap-6 no-scrollbar">
+                  <div 
+                    ref={chatContainerRef}
+                    className="flex-1 p-6 overflow-y-auto scrollbar-gutter-stable flex flex-col gap-6 scrollbar-custom"
+                  >
                     {messages.map(m => (
                       <MessageItem 
                         key={m.id} 
                         msg={m} 
                         isOwn={m.sender_id === user.id} 
+                        currentUserId={user.id}
                         onEdit={async (id, content) => {
                           await editMessage(id, content)
                         }}
                         onDelete={(id) => setMessageToDelete(id)}
                         onPin={(id, isPinned) => togglePinMessage(id, isPinned)}
+                        onReact={(id, emoji) => addReaction(id, user.id, emoji)}
                       />
                     ))}
-                    <div ref={chatEndRef} />
+                    <div ref={chatEndRef} className="h-4" />
                     {messages.length === 0 && (
                       <div className="flex-1 flex flex-col items-center justify-center text-white/10 gap-4">
                         <MessageCircle className="w-16 h-16" />
