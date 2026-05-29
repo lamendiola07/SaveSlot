@@ -134,10 +134,10 @@ function MessageItem({
 
   return (
     <div className={`group flex flex-col ${isOwn ? 'items-end' : 'items-start'} relative mb-2`}>
-      <div className={`flex items-center gap-2 max-w-[85%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+      <div className={`flex items-center gap-2 max-w-[85%] ${isOwn ? 'flex-row' : 'flex-row-reverse'}`}>
         {/* Actions Menu */}
         {!isEditing && (
-          <div className="relative flex items-center gap-1" ref={menuRef}>
+          <div className={`relative flex items-center gap-1 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`} ref={menuRef}>
             {/* Reaction Trigger */}
             <button 
               onClick={() => setShowReactions(!showReactions)}
@@ -315,9 +315,8 @@ export function FriendsPage() {
   useEffect(() => {
     if (user) {
       fetchFriends(user.id)
-      fetchDiscoverUsers(user.id)
     }
-  }, [user, fetchFriends, fetchDiscoverUsers])
+  }, [user, fetchFriends])
 
   useEffect(() => {
     if (!user) return
@@ -453,57 +452,49 @@ export function FriendsPage() {
     <div className="min-h-screen flex flex-col bg-[#240025]">
       <Header />
       
-      <main className="flex-1 max-w-[1440px] mx-auto w-full px-12 py-12 flex gap-8">
+      <main className="flex-1 max-w-[1280px] mx-auto w-full px-20 py-5 flex gap-5">
         {/* ... (Left Column remains same) ... */}
         <div className="w-[400px] flex flex-col gap-6">
           {/* Find Friends */}
-          <div className="bg-[#42135b] rounded-2xl p-6 shadow-xl border border-white/5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Search className="w-5 h-5 text-[#c77fc7]" />
-                FIND A FRIEND
-              </h2>
-              <button 
-                onClick={() => fetchDiscoverUsers(user.id)}
-                className="text-[10px] font-bold text-white/40 hover:text-white uppercase tracking-widest transition-colors"
-              >
-                Shuffle
-              </button>
-            </div>
+          <div className="bg-[#42135b] rounded-xl p-4 shadow-xl border border-white/5">
             <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#c77fc7]" />
               <input 
                 type="text"
                 placeholder="Search username..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-11 bg-white/10 border border-white/10 rounded-xl px-4 text-white font-roboto outline-none focus:border-[#773877] transition-all"
+                className="w-full h-10 bg-white/10 border border-white/10 rounded-xl pl-10 pr-4 text-white font-roboto outline-none focus:border-[#773877] transition-all"
               />
             </div>
 
-            <div className="mt-6 flex flex-col gap-3 max-h-[300px] overflow-y-auto no-scrollbar">
-              <p className="text-white/40 text-xs font-bold uppercase tracking-widest px-1">Discover Users</p>
-              {loading && <p className="text-white/40 text-xs px-1">Loading users...</p>}
-              {discoverUsers.map(u => (
-                <div key={u.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#773877] flex items-center justify-center border border-white/10 overflow-hidden">
-                      {u.pfp_url ? <img src={u.pfp_url} alt="" className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-white" />}
+            {searchQuery.trim() !== '' && (
+              <div className="mt-4 flex flex-col gap-3 max-h-[300px] overflow-y-auto no-scrollbar animate-in fade-in slide-in-from-top-2 duration-200">
+                {loading && <p className="text-white/40 text-xs px-1">Searching...</p>}
+                
+                {discoverUsers.map(u => (
+                  <div key={u.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors group">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#773877] flex items-center justify-center border border-white/10 overflow-hidden">
+                        {u.pfp_url ? <img src={u.pfp_url} alt="" className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-white" />}
+                      </div>
+                      <span className="text-white font-medium text-sm">{u.username}</span>
                     </div>
-                    <span className="text-white font-medium text-sm">{u.username}</span>
+                    <button 
+                      onClick={() => addFriend(user.id, u.id)}
+                      className="p-2 rounded-lg bg-white/10 text-white hover:bg-[#773877] transition-all"
+                      title="Add Friend"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button 
-                    onClick={() => addFriend(user.id, u.id)}
-                    className="p-2 rounded-lg bg-white/10 text-white hover:bg-[#773877] transition-all"
-                    title="Add Friend"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-              {!loading && discoverUsers.length === 0 && (
-                <p className="text-center py-4 text-white/20 text-sm">No users found</p>
-              )}
-            </div>
+                ))}
+                
+                {!loading && discoverUsers.length === 0 && (
+                  <p className="text-center py-4 text-white/40 text-sm">No users found matching "{searchQuery}"</p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Pending Requests */}
@@ -544,8 +535,8 @@ export function FriendsPage() {
           )}
 
           {/* Friends List */}
-          <div className="bg-[#42135b] rounded-2xl p-6 shadow-xl border border-white/5 flex-1 min-h-[400px]">
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2 uppercase tracking-wider">
+          <div className="bg-[#42135b] rounded-2xl p-6 shadow-xl border border-white/5 flex-1 min-h-[200px]">
+            <h2 className="text-sm font-bold text-white mb-4 flex items-center gap-2 uppercase tracking-wider">
               Your Friends
             </h2>
             <div className="flex flex-col gap-2">
@@ -568,7 +559,7 @@ export function FriendsPage() {
                       }`} />
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-white font-bold text-sm leading-none">{f.username}</span>
+                      <span className="text-white font-bold text-xs leading-none">{f.username}</span>
                       <span className="text-white/40 text-[11px] mt-1">{f.status}</span>
                     </div>
                   </div>
@@ -603,24 +594,24 @@ export function FriendsPage() {
                 className="flex flex-col h-full gap-6"
               >
                 {/* Friend Header/Profile */}
-                <div className="bg-[#42135b] rounded-2xl p-8 shadow-xl border border-white/5 flex items-center justify-between">
+                <div className="bg-[#42135b] rounded-2xl p-5 shadow-xl border border-white/5 flex items-center justify-between min-h-[50px]">
                   <div className="flex items-center gap-6">
-                    <div className="w-24 h-24 rounded-full bg-[#773877] flex items-center justify-center border-4 border-[#240025] shadow-2xl overflow-hidden">
+                    <div className="w-12 h-12 rounded-full bg-[#773877] flex items-center justify-center border-4 border-[#240025] shadow-2xl overflow-hidden">
                       {selectedFriend.pfp_url ? <img src={selectedFriend.pfp_url} alt="" className="w-full h-full object-cover" /> : <User className="w-12 h-12 text-white" />}
                     </div>
                     <div className="flex flex-col">
-                      <h1 className="text-3xl font-bold text-white uppercase tracking-tighter">{selectedFriend.username}</h1>
+                      <h1 className="text-sm font-bold text-white uppercase tracking-tighter">{selectedFriend.username}</h1>
                       <div className="flex items-center gap-2 mt-2">
-                        <span className={`w-3 h-3 rounded-full ${
+                        <span className={`w-2 h-2 rounded-full ${
                           selectedFriend.status === 'Online' ? 'bg-green-400' : 
                           selectedFriend.status === 'In-game' ? 'bg-blue-400' : 'bg-white/20'
                         }`} />
-                        <span className="text-white/60 font-medium">{selectedFriend.status}</span>
+                        <span className="text-white/60 font-medium text-xs">{selectedFriend.status}</span>
                       </div>
                     </div>
                   </div>
                   <button 
-                    className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all border border-white/5"
+                    className="flex items-center gap-2 px-2.5 py-2.5 bg-white/10 hover:bg-white/20 text-sm text-white rounded-xl font-bold transition-all border border-white/5"
                     onClick={() => navigate(`/profile/${selectedFriend.id}`)}
                   >
                     <ExternalLink className="w-4 h-4" />
@@ -629,7 +620,7 @@ export function FriendsPage() {
                 </div>
 
                 {/* Chat Area */}
-                <div className="flex-1 bg-[#1e0628] rounded-2xl flex flex-col shadow-2xl border border-white/5 overflow-hidden min-h-[500px] max-h-[800px]">
+                <div className="flex-1 bg-[#1e0628] rounded-2xl flex flex-col shadow-2xl border border-white/5 overflow-hidden max-h-[450px]">
                   {/* Pinned Banner */}
                   {pinnedMessages.length > 0 && (
                     <div className="bg-orange-500/10 border-b border-orange-500/20 px-4 py-2 flex items-center gap-3">

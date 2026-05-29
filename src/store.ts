@@ -252,22 +252,21 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
   },
 
   fetchDiscoverUsers: async (userId, query = '') => {
+    // 1. Add early return for empty queries
+    if (!query.trim()) {
+      set({ discoverUsers: [], loading: false })
+      return
+    }
+
     set({ loading: true })
     
-    let supabaseQuery = supabase
+    // 2. Only fetch when there is a query
+    const { data: allProfiles, error: profError } = await supabase
       .from('profiles')
       .select('id, username, pfp_url, status')
       .neq('id', userId)
-
-    if (query.trim()) {
-      supabaseQuery = supabaseQuery.ilike('username', `%${query.trim()}%`).limit(5)
-    } else {
-      // Randomize by fetching more and picking 5, or use a specific order
-      // Supabase JS doesn't have a built-in random(), so we'll use a trick
-      supabaseQuery = supabaseQuery.order('updated_at', { ascending: Math.random() > 0.5 }).limit(5)
-    }
-
-    const { data: allProfiles, error: profError } = await supabaseQuery
+      .ilike('username', `%${query.trim()}%`)
+      .limit(10) // Increase limit slightly since we are specifically searching
 
     if (profError) {
       console.error('Error fetching discover users:', profError)
