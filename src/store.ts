@@ -664,8 +664,9 @@ interface SearchState {
   dates?: string
   genres?: string
   metacritic?: string
+  platforms?: string
   setQuery: (query: string) => void
-  setFilters: (filters: { ordering?: string; dates?: string; genres?: string; metacritic?: string }) => void
+  setFilters: (filters: { ordering?: string; dates?: string; genres?: string; metacritic?: string; platforms?: string }) => void
   clearFilters: () => void
 }
 
@@ -675,7 +676,8 @@ export const useSearchStore = create<SearchState>((set) => ({
   dates: undefined,
   genres: undefined,
   metacritic: undefined,
+  platforms: undefined,
   setQuery: (query) => set({ query }),
   setFilters: (filters) => set(filters),
-  clearFilters: () => set({ query: '', ordering: undefined, dates: undefined, genres: undefined, metacritic: undefined }),
+  clearFilters: () => set({ query: '', ordering: undefined, dates: undefined, genres: undefined, metacritic: undefined, platforms: undefined }),
 }))

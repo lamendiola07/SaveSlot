@@ -7,6 +7,7 @@ import { PfpCropModal } from './PfpCropModal'
 import { NotificationsPanel } from './NotificationsPanel'
 import { CreatePostModal } from './CreatePostModal'
 import { motion, AnimatePresence } from 'framer-motion'
+import { X } from 'lucide-react';
 
 type ActivePanel = null | 'email' | 'password'
 
@@ -29,6 +30,23 @@ const RATINGS = [
   { label: '70-79', value: '70,79' },
   { label: '60-69', value: '60,69' },
   { label: '50-59', value: '50,59' },
+  { label: '50-0', value: '0,50' },
+]
+
+const PLATFORMS = [
+  { name: 'PC', id: '4' },
+  { name: 'PlayStation 5', id: '187' },
+  { name: 'Xbox Series X/S', id: '186' },
+  { name: 'Nintendo Switch', id: '7' },
+  { name: 'iOS', id: '3' },
+  { name: 'Android', id: '21' },
+]
+
+const SORT_OPTIONS = [
+  { name: 'Popularity', value: '-added' },
+  { name: 'Release Date', value: '-released' },
+  { name: 'Metacritic', value: '-metacritic' },
+  { name: 'Name', value: 'name' },
 ]
 
 export function Header() {
@@ -43,6 +61,8 @@ export function Header() {
   const [selectedGenres, setSelectedGenres] = useState<string[]>([])
   const [selectedYear, setSelectedYear] = useState<string>('')
   const [selectedRating, setSelectedRating] = useState<string>('')
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
+  const [selectedOrdering, setSelectedOrdering] = useState<string>('-added')
 
   const [emailInput, setEmailInput] = useState('')
   const [passwordInput, setPasswordInput] = useState('')
@@ -131,12 +151,19 @@ export function Header() {
     )
   }
 
+  const handlePlatformToggle = (id: string) => {
+    setSelectedPlatforms(prev => 
+      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
+    )
+  }
+
   const handleBrowseSubmit = () => {
     const filters: any = {
       genres: selectedGenres.length > 0 ? selectedGenres.join(',') : undefined,
       dates: selectedYear ? `${selectedYear}-01-01,${selectedYear}-12-31` : undefined,
       metacritic: selectedRating || undefined,
-      ordering: undefined // Reset ordering when browsing with new filters
+      platforms: selectedPlatforms.length > 0 ? selectedPlatforms.join(',') : undefined,
+      ordering: selectedOrdering
     }
     setFilters(filters)
     setBrowseOpen(false)
@@ -357,16 +384,16 @@ export function Header() {
         {browseOpen && (
           <motion.div 
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 2 }}
+            animate={{ height: 'auto', opacity: 3 }}
             exit={{ height: 0, opacity: 0 }}
-            className="absolute top-full left-12 right-12 bg-[#2a0838]/60 border border-white/10 border-t-0 rounded-b-2xl shadow-2xl overflow-hidden z-40"
+            className="absolute top-full left-[170px] right-[170px] bg-[#2a0838]/80 backdrop-blur-md border border-white/10 border-t-0 rounded-b-2xl shadow-2xl overflow-hidden z-40"
           >
-            <div className="p-5">
-              <div className="flex gap-16">
-                {/* Genres */}
-                <div className="flex flex-col gap-4 flex-1">
-                  <p className="text-white/40 text-xs font-bold uppercase tracking-[0.2em]">Filter by Genre</p>
-                  <div className="grid grid-cols-4 gap-x-4 gap-y-3">
+            <div className="p-8">
+              <div className="grid grid-cols-3 gap-12">
+                {/* Column 1: Genres */}
+                <div className="flex flex-col gap-4">
+                  <p className="text-white/80 text-sm font-bold uppercase tracking-[0.2em] border-b border-white/10 pb-2">Filter by Genre</p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                     {GENRES.map(g => (
                       <label key={g.slug} className="flex items-center gap-3 cursor-pointer group">
                         <input 
@@ -375,49 +402,112 @@ export function Header() {
                           onChange={() => handleGenreToggle(g.slug)}
                           className="hidden"
                         />
-                        <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${selectedGenres.includes(g.slug) ? 'bg-[#773877] border-[#773877] scale-110' : 'border-white/10 group-hover:border-white/30'}`}>
+                        <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${selectedGenres.includes(g.slug) ? 'bg-[#773877] border-[#773877] scale-110' : 'border-white/30 group-hover:border-white/50'}`}>
                           {selectedGenres.includes(g.slug) && <div className="w-2 h-2 bg-white rounded-sm shadow-sm" />}
                         </div>
-                        <span className={`text-sm font-roboto transition-colors ${selectedGenres.includes(g.slug) ? 'text-white font-bold' : 'text-white/80 group-hover:text-white/80'}`}>{g.name}</span>
+                        <span className={`text-sm font-roboto transition-colors ${selectedGenres.includes(g.slug) ? 'text-white font-bold' : 'text-white/80 group-hover:text-white'}`}>{g.name}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-                {/* Years */}
-                <div className="flex flex-col gap-4 w-64">
-                  <p className="text-white/80 text-xs font-bold uppercase tracking-[0.2em]">Release Year</p>
-                  <div className="flex flex-wrap gap-2">
-                    {YEARS.map(y => (
-                      <button 
-                        key={y}
-                        onClick={() => setSelectedYear(selectedYear === y ? '' : y)}
-                        className={`px-4 py-2 rounded-xl text-xs font-roboto transition-all border ${selectedYear === y ? 'bg-[#773877] border-[#773877] text-white font-bold shadow-lg scale-105' : 'border-white/10 text-white/80 hover:border-white/20 hover:text-white'}`}
-                      >
-                        {y}
-                      </button>
-                    ))}
+                {/* Column 2: Platform & Rating */}
+                <div className="flex flex-col gap-8 ">
+                  <div className="flex flex-col gap-4">
+                    <p className="text-white/80 text-sm font-bold uppercase tracking-[0.2em] border-b border-white/10 pb-2">Platforms</p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                      {PLATFORMS.map(p => (
+                        <label key={p.id} className="flex items-center gap-3 cursor-pointer group">
+                          <input 
+                            type="checkbox" 
+                            checked={selectedPlatforms.includes(p.id)}
+                            onChange={() => handlePlatformToggle(p.id)}
+                            className="hidden"
+                          />
+                          <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition-all ${selectedPlatforms.includes(p.id) ? 'bg-[#773877] border-[#773877] scale-110' : 'border-white/30 group-hover:border-white/50'}`}>
+                            {selectedPlatforms.includes(p.id) && <div className="w-2 h-2 bg-white rounded-sm shadow-sm" />}
+                          </div>
+                          <span className={`text-sm font-roboto transition-colors ${selectedPlatforms.includes(p.id) ? 'text-white font-bold' : 'text-white/80 group-hover:text-white'}`}>{p.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-4">
+                    <p className="text-white/80 text-sm pt-4 font-bold uppercase tracking-[0.2em] border-b border-white/10 pb-2">Metacritic Score</p>
+                    <div className="flex flex-wrap gap-2">
+                      {RATINGS.map(r => (
+                        <button 
+                          key={r.value}
+                          onClick={() => setSelectedRating(selectedRating === r.value ? '' : r.value)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-roboto transition-all border ${selectedRating === r.value ? 'bg-[#773877] border-[#773877] text-white font-bold shadow-lg scale-105' : 'border-white/20 text-white/60 hover:border-white/40 hover:text-white'}`}
+                        >
+                          {r.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Column 3: Release Year & Sort */}
+                <div className="flex flex-col gap-8">
+                  <div className="flex flex-col gap-5">
+                    <p className="text-white/80 text-sm font-bold uppercase tracking-[0.2em] border-b border-white/10 pb-2">Release Year</p>
+                    <div className="flex flex-wrap gap-3">
+                      {YEARS.map(y => (
+                        <button 
+                          key={y}
+                          onClick={() => setSelectedYear(selectedYear === y ? '' : y)}
+                          className={`px-4 py-2 rounded-xl text-[13px] font-roboto transition-all border ${selectedYear === y ? 'bg-[#773877] border-[#773877] text-white font-bold shadow-lg scale-105' : 'border-white/20 text-white/60 hover:border-white/40 hover:text-white'}`}
+                        >
+                          {y}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-4 ">
+                    <p className="text-white/80 text-sm pt-3 font-bold uppercase tracking-[0.2em] border-b border-white/10 pb-2">Sort By</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {SORT_OPTIONS.map(opt => (
+                        <button 
+                          key={opt.value}
+                          onClick={() => setSelectedOrdering(opt.value)}
+                          className={`px-3 py-2 rounded-xl text-xs font-roboto transition-all border text-left flex items-center justify-between ${selectedOrdering === opt.value ? 'bg-[#773877] border-[#773877] text-white font-bold' : 'border-white/10 text-white/40 hover:border-white/30 hover:text-white'}`}
+                        >
+                          {opt.name}
+                          {selectedOrdering === opt.value && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-10 pt-6 border-t border-white/5 flex items-center justify-between">
+              <div className="mt-12 pt-6 border-t border-white/10 flex items-center justify-between">
                 <button 
-                  onClick={() => { setSelectedGenres([]); setSelectedYear(''); setSelectedRating('') }}
-                  className="text-white/20 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors"
+                  onClick={() => { 
+                    setSelectedGenres([]); 
+                    setSelectedYear(''); 
+                    setSelectedRating(''); 
+                    setSelectedPlatforms([]);
+                    setSelectedOrdering('-added');
+                  }}
+                  className="text-white/40 hover:text-white text-[13px] font-bold uppercase tracking-wide transition-colors flex items-center gap-2"
                 >
+                  <X className="w-4 h-4" />
                   Clear all filters
                 </button>
                 <div className="flex items-center gap-4">
                   <button 
                     onClick={() => setBrowseOpen(false)}
-                    className="text-white/40 hover:text-white text-sm font-medium px-6 py-2 transition-colors"
+                    className="text-white/60 hover:text-white text-sm font-medium px-6 py-2 transition-colors"
                   >
                     Cancel
                   </button>
                   <button 
                     onClick={handleBrowseSubmit}
-                    className="bg-[#773877] hover:bg-[#8f4a8f] text-white font-bold text-sm px-10 py-3 rounded-xl transition-all shadow-xl hover:scale-105 active:scale-95 flex items-center gap-2"
+                    className="bg-[#773877] hover:bg-[#8f4a8f] text-white font-bold text-sm px-4 py-3 rounded-xl transition-all shadow-xl hover:scale-105 active:scale-95 flex items-center gap-2"
                   >
                     <Search className="w-4 h-4" />
                     Apply Filters
