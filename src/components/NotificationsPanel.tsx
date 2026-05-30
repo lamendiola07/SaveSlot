@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { fetchTopDeals, fetchStores, getRedirectUrl, CheapSharkDeal, CheapSharkStore } from '../services/cheapSharkApi'
+import { motion } from 'framer-motion'
 
 interface EnrichedDeal extends CheapSharkDeal {
   storeName: string
@@ -34,12 +35,17 @@ export function NotificationsPanel({ onClose }: Props) {
   }, [])
 
   return (
-    <div className="absolute top-full right-0 mt-2 w-96 bg-[#2a0838] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+    <motion.div 
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: 'auto', opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      className="absolute top-full right-0 mt-3 w-113 bg-[#2a0838]/90 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50"
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
         <div>
-          <h3 className="font-roboto font-semibold text-white text-sm">Current Sales & Deals</h3>
-          <p className="font-roboto text-white/35 text-[10px] mt-0.5">Top-rated deals right now</p>
+          <h2 className="font-roboto font-semibold text-white text-base">Current Sales & Deals</h2>
+          <p className="font-roboto text-white/50 text-[12px] mt-0.5">Top-rated deals right now</p>
         </div>
         <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
           <X className="w-4 h-4" />
@@ -114,6 +120,6 @@ export function NotificationsPanel({ onClose }: Props) {
       <div className="px-4 py-2 border-t border-white/10 text-center">
         <p className="font-roboto text-white/25 text-[10px]">Powered by CheapShark</p>
       </div>
-    </div>
+    </motion.div>
   )
 }

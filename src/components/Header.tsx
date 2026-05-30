@@ -1,13 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Menu, User, Mail, Lock, LogOut, Pencil, UserRound, Search, Bell, MessageSquare, Users, ChevronDown } from 'lucide-react'
+import { Menu, User, Mail, Lock, LogOut, Pencil, UserRound, Search, Bell, MessageSquare, Users, ChevronDown, X } from 'lucide-react'
 import { useAuthStore, useSearchStore } from '../store'
 import { supabase } from '../services/supabase'
 import { PfpCropModal } from './PfpCropModal'
 import { NotificationsPanel } from './NotificationsPanel'
 import { CreatePostModal } from './CreatePostModal'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X } from 'lucide-react';
 
 type ActivePanel = null | 'email' | 'password'
 
@@ -56,6 +55,29 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [browseOpen, setBrowseOpen] = useState(false)
   const [activePanel, setActivePanel] = useState<ActivePanel>(null)
+  
+  // Search local state for debouncing
+  const [localQuery, setLocalQuery] = useState(query)
+
+  // Sync local query if store query changes externally (e.g. clear filters)
+  useEffect(() => {
+    setLocalQuery(query)
+  }, [query])
+
+  // Debounce effect
+  useEffect(() => {
+    if (localQuery === query) return
+
+    const handler = setTimeout(() => {
+      clearFilters()
+      setQuery(localQuery)
+      if (window.location.pathname !== '/games' && localQuery.trim() !== '') {
+        navigate('/games')
+      }
+    }, 500)
+
+    return () => clearTimeout(handler)
+  }, [localQuery, query, setQuery, clearFilters, navigate])
   
   // Browse filter local state
   const [selectedGenres, setSelectedGenres] = useState<string[]>([])
@@ -188,12 +210,8 @@ export function Header() {
             <input
               type="text"
               placeholder="Search games..."
-              value={query}
-              onChange={(e) => {
-                clearFilters()
-                setQuery(e.target.value)
-                if (window.location.pathname !== '/games') navigate('/games')
-              }}
+              value={localQuery}
+              onChange={(e) => setLocalQuery(e.target.value)}
               className="text-[15px] text-black w-full outline-none font-roboto placeholder:text-black/40"
             />
           </div>
@@ -226,7 +244,9 @@ export function Header() {
             >
               <Bell className={`w-5 h-5 ${showNotif ? 'text-[#c77fc7]' : 'text-white'}`} />
             </button>
-            {showNotif && <NotificationsPanel onClose={() => setShowNotif(false)} />}
+            <AnimatePresence>
+              {showNotif && <NotificationsPanel onClose={() => setShowNotif(false)} />}
+            </AnimatePresence>
           </div>
 
           <button
@@ -247,131 +267,138 @@ export function Header() {
               <Menu className="w-5 h-5 text-white" />
             </button>
 
-            {menuOpen && (
-              <div className="fixed top-[60px] right-3 w-72 bg-[#2a0838] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
-                {isAuthenticated ? (
-                  <>
-                    {/* Profile section */}
-                    <div className="flex flex-col items-center px-4 pt-6 pb-5 border-b border-white/10 gap-3">
-                      {/* PFP frame with edit overlay */}
-                      <div className="relative group/pfp">
-                        <div className="w-20 h-20 rounded-full bg-[#773877] border-2 border-white/20 flex items-center justify-center overflow-hidden">
-                          {pfpUrl
-                            ? <img src={pfpUrl} alt="Profile" className="w-full h-full object-cover" />
-                            : <User className="w-9 h-9 text-white" />
-                          }
+            <AnimatePresence>
+              {menuOpen && (
+                <motion.div 
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="fixed top-[63px] right-3 w-72 bg-[#2a0838]/90 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50"
+                >
+                  {isAuthenticated ? (
+                    <>
+                      {/* Profile section */}
+                      <div className="flex flex-col items-center px-4 pt-6 pb-5 border-b border-white/10 gap-3">
+                        {/* PFP frame with edit overlay */}
+                        <div className="relative group/pfp">
+                          <div className="w-20 h-20 rounded-full bg-[#773877] border-2 border-white/20 flex items-center justify-center overflow-hidden">
+                            {pfpUrl
+                              ? <img src={pfpUrl} alt="Profile" className="w-full h-full object-cover" />
+                              : <User className="w-9 h-9 text-white" />
+                            }
+                          </div>
+                          <button
+                            onClick={() => setShowCropModal(true)}
+                            className="absolute inset-0 rounded-full bg-black/55 flex items-center justify-center opacity-0 group-hover/pfp:opacity-100 transition-opacity"
+                            title="Edit profile picture"
+                          >
+                            <Pencil className="w-5 h-5 text-white" />
+                          </button>
                         </div>
-                        <button
-                          onClick={() => setShowCropModal(true)}
-                          className="absolute inset-0 rounded-full bg-black/55 flex items-center justify-center opacity-0 group-hover/pfp:opacity-100 transition-opacity"
-                          title="Edit profile picture"
+                        <span className="font-roboto text-white font-semibold text-base">Hi, {username}</span>
+                      </div>
+
+                      {/* Menu items */}
+                      <div className="flex flex-col py-1">
+                        {/* Profile link */}
+                        <Link
+                          to="/profile"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors group"
                         >
-                          <Pencil className="w-5 h-5 text-white" />
+                          <UserRound className="w-4 h-4 shrink-0 text-[#c77fc7]" />
+                          <span className="font-roboto text-white font-semibold text-sm truncate">{username}</span>
+                        </Link>
+
+                        {/* Find a friend */}
+                        <Link
+                          to="/friends"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors group"
+                        >
+                          <Users className="w-4 h-4 shrink-0 text-[#c77fc7]" />
+                          <span className="font-roboto text-white font-semibold text-sm truncate">Find a friend</span>
+                        </Link>
+
+                        <div className="border-t border-white/10 mx-4 mb-1" />
+
+                        {/* Edit Email */}
+                        <button
+                          onClick={() => togglePanel('email')}
+                          className="flex items-center gap-3 px-4 py-3 text-white/80 hover:text-white hover:bg-white/5 transition-colors text-sm font-roboto"
+                        >
+                          <Mail className="w-4 h-4 shrink-0" />
+                          Edit Email
+                        </button>
+                        {activePanel === 'email' && (
+                          <div className="px-4 pb-3 flex flex-col gap-2">
+                            <input
+                              type="email"
+                              placeholder="New email address"
+                              value={emailInput}
+                              onChange={e => setEmailInput(e.target.value)}
+                              className="w-full bg-white/10 border border-white/20 rounded px-3 py-1.5 text-white text-xs font-roboto placeholder:text-white/30 outline-none focus:border-[#773877]"
+                            />
+                            <button
+                              onClick={handleUpdateEmail}
+                              className="w-full bg-[#773877] hover:bg-[#8f4a8f] text-white text-xs font-roboto font-medium py-1.5 rounded transition-colors"
+                            >
+                              Save Email
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Change Password */}
+                        <button
+                          onClick={() => togglePanel('password')}
+                          className="flex items-center gap-3 px-4 py-3 text-white/80 hover:text-white hover:bg-white/5 transition-colors text-sm font-roboto"
+                        >
+                          <Lock className="w-4 h-4 shrink-0" />
+                          Change Password
+                        </button>
+                        {activePanel === 'password' && (
+                          <div className="px-4 pb-3 flex flex-col gap-2">
+                            <input
+                              type="password"
+                              placeholder="New password"
+                              value={passwordInput}
+                              onChange={e => setPasswordInput(e.target.value)}
+                              className="w-full bg-white/10 border border-white/20 rounded px-3 py-1.5 text-white text-xs font-roboto placeholder:text-white/30 outline-none focus:border-[#773877]"
+                            />
+                            <button
+                              onClick={handleUpdatePassword}
+                              className="w-full bg-[#773877] hover:bg-[#8f4a8f] text-white text-xs font-roboto font-medium py-1.5 rounded transition-colors"
+                            >
+                              Save Password
+                            </button>
+                          </div>
+                        )}
+
+                        {feedback && (
+                          <p className="px-4 pb-2 text-xs font-roboto text-white/60">{feedback}</p>
+                        )}
+
+                        <div className="border-t border-white/10 mt-1" />
+
+                        {/* Logout */}
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-white/5 transition-colors text-sm font-roboto"
+                        >
+                          <LogOut className="w-4 h-4 shrink-0" />
+                          Logout
                         </button>
                       </div>
-                      <span className="font-roboto text-white font-semibold text-base">Hi, {username}</span>
+                    </>
+                  ) : (
+                    <div className="flex flex-col p-2 gap-2">
+                      <Link to="/auth" state={{ isLogin: true }} onClick={() => setMenuOpen(false)} className="w-full bg-[#773877] hover:bg-[#8f4a8f] text-white text-center font-roboto font-bold py-2.5 rounded-lg transition-colors shadow-lg">Sign In</Link>
+                      <Link to="/auth" state={{ isLogin: false }} onClick={() => setMenuOpen(false)} className="w-full bg-white/10 hover:bg-white/20 text-white text-center font-roboto font-medium py-2.5 rounded-lg transition-colors">Create Account</Link>
                     </div>
-
-                    {/* Menu items */}
-                    <div className="flex flex-col py-1">
-                      {/* Profile link */}
-                      <Link
-                        to="/profile"
-                        onClick={() => setMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors group"
-                      >
-                        <UserRound className="w-4 h-4 shrink-0 text-[#c77fc7]" />
-                        <span className="font-roboto text-white font-semibold text-sm truncate">{username}</span>
-                      </Link>
-
-                      {/* Find a friend */}
-                      <Link
-                        to="/friends"
-                        onClick={() => setMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors group"
-                      >
-                        <Users className="w-4 h-4 shrink-0 text-[#c77fc7]" />
-                        <span className="font-roboto text-white font-semibold text-sm truncate">Find a friend</span>
-                      </Link>
-
-                      <div className="border-t border-white/10 mx-4 mb-1" />
-
-                      {/* Edit Email */}
-                      <button
-                        onClick={() => togglePanel('email')}
-                        className="flex items-center gap-3 px-4 py-3 text-white/80 hover:text-white hover:bg-white/5 transition-colors text-sm font-roboto"
-                      >
-                        <Mail className="w-4 h-4 shrink-0" />
-                        Edit Email
-                      </button>
-                      {activePanel === 'email' && (
-                        <div className="px-4 pb-3 flex flex-col gap-2">
-                          <input
-                            type="email"
-                            placeholder="New email address"
-                            value={emailInput}
-                            onChange={e => setEmailInput(e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded px-3 py-1.5 text-white text-xs font-roboto placeholder:text-white/30 outline-none focus:border-[#773877]"
-                          />
-                          <button
-                            onClick={handleUpdateEmail}
-                            className="w-full bg-[#773877] hover:bg-[#8f4a8f] text-white text-xs font-roboto font-medium py-1.5 rounded transition-colors"
-                          >
-                            Save Email
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Change Password */}
-                      <button
-                        onClick={() => togglePanel('password')}
-                        className="flex items-center gap-3 px-4 py-3 text-white/80 hover:text-white hover:bg-white/5 transition-colors text-sm font-roboto"
-                      >
-                        <Lock className="w-4 h-4 shrink-0" />
-                        Change Password
-                      </button>
-                      {activePanel === 'password' && (
-                        <div className="px-4 pb-3 flex flex-col gap-2">
-                          <input
-                            type="password"
-                            placeholder="New password"
-                            value={passwordInput}
-                            onChange={e => setPasswordInput(e.target.value)}
-                            className="w-full bg-white/10 border border-white/20 rounded px-3 py-1.5 text-white text-xs font-roboto placeholder:text-white/30 outline-none focus:border-[#773877]"
-                          />
-                          <button
-                            onClick={handleUpdatePassword}
-                            className="w-full bg-[#773877] hover:bg-[#8f4a8f] text-white text-xs font-roboto font-medium py-1.5 rounded transition-colors"
-                          >
-                            Save Password
-                          </button>
-                        </div>
-                      )}
-
-                      {feedback && (
-                        <p className="px-4 pb-2 text-xs font-roboto text-white/60">{feedback}</p>
-                      )}
-
-                      <div className="border-t border-white/10 mt-1" />
-
-                      {/* Logout */}
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-white/5 transition-colors text-sm font-roboto"
-                      >
-                        <LogOut className="w-4 h-4 shrink-0" />
-                        Logout
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex flex-col p-2 gap-2">
-                    <Link to="/auth" state={{ isLogin: true }} onClick={() => setMenuOpen(false)} className="w-full bg-[#773877] hover:bg-[#8f4a8f] text-white text-center font-roboto font-bold py-2.5 rounded-lg transition-colors shadow-lg">Sign In</Link>
-                    <Link to="/auth" state={{ isLogin: false }} onClick={() => setMenuOpen(false)} className="w-full bg-white/10 hover:bg-white/20 text-white text-center font-roboto font-medium py-2.5 rounded-lg transition-colors">Create Account</Link>
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
@@ -523,9 +550,11 @@ export function Header() {
         <PfpCropModal onClose={() => setShowCropModal(false)} onSave={handlePfpSave} />
       )}
 
-      {showPostModal && (
-        <CreatePostModal onClose={() => setShowPostModal(false)} pfpUrl={pfpUrl} />
-      )}
+      <AnimatePresence>
+        {showPostModal && (
+          <CreatePostModal onClose={() => setShowPostModal(false)} pfpUrl={pfpUrl} />
+        )}
+      </AnimatePresence>
     </header>
   )
 }

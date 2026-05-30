@@ -4,8 +4,11 @@ import { User } from 'lucide-react'
 import { useAuthStore, usePostsStore, TaggedGame } from '../store'
 import { fetchRawgGames } from '../services/rawgApi'
 import type { Game } from '../types/game'
+import { motion } from 'framer-motion'
 
 interface Props {
+// ... (rest of imports and interfaces same)
+
   onClose: () => void
   pfpUrl: string | null
 }
@@ -155,19 +158,32 @@ export function CreatePostModal({ onClose, pfpUrl }: Props) {
   const openGame = () => { setShowGameSearch(v => !v); setShowTagInput(false); setShowGifPanel(false); setGameQuery(''); setGameResults([]) }
 
   return (
-    <div className="fixed inset-0 bg-black/70 z-[200] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-[#2a0838] border border-white/10 rounded-2xl w-[520px] shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4" 
+      onClick={onClose}
+    >
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 400 }}
+        className="bg-[#2a0838] border border-white/10 rounded-2xl w-[640px] shadow-2xl flex flex-col" 
+        onClick={e => e.stopPropagation()}
+      >
 
         {/* Header */}
         <div className="relative flex items-center justify-center px-6 py-4 border-b border-white/10 shrink-0">
-          <h2 className="font-roboto font-semibold text-white text-base">Create Post</h2>
-          <button onClick={onClose} className="absolute right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white transition-colors">
+          <h2 className="font-roboto font-semibold text-white text-lg">Create Post</h2>
+          <button onClick={onClose} className="absolute right-4 w-8 h-8 flex items-center justify-center text-white/60 hover:text-white transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Scrollable body */}
-        <div className="overflow-y-auto max-h-[70vh]">
+        <div className="overflow-y-auto max-h-70vh]">
 
           {/* User row */}
           <div className="flex items-center gap-3 px-4 pt-4">
@@ -175,7 +191,7 @@ export function CreatePostModal({ onClose, pfpUrl }: Props) {
               {pfpUrl ? <img src={pfpUrl} alt="pfp" className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-white" />}
             </div>
             <div>
-              <p className="font-roboto font-semibold text-white text-sm">{username}</p>
+              <p className="font-roboto font-semibold text-white text-[13px]">{username}</p>
               <button className="flex items-center gap-1 bg-white/10 hover:bg-white/15 transition-colors rounded px-2 py-0.5 mt-0.5">
                 <Globe className="w-3 h-3 text-white/60" />
                 <span className="font-roboto text-white/60 text-[11px]">Public</span>
@@ -191,7 +207,7 @@ export function CreatePostModal({ onClose, pfpUrl }: Props) {
               placeholder={`What's on your mind, ${username}?`}
               value={content}
               onChange={e => setContent(e.target.value)}
-              rows={3}
+              rows={4}
               className="w-full bg-transparent text-white font-roboto text-base placeholder:text-white/25 resize-none outline-none"
             />
 
@@ -363,7 +379,7 @@ export function CreatePostModal({ onClose, pfpUrl }: Props) {
             {posting ? 'Posting…' : 'Post'}
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

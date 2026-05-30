@@ -191,6 +191,86 @@ export interface GameComment {
   }
 }
 
+export interface PlayedGame {
+  id: string
+  user_id: string
+  game_id: string
+  game_title: string
+  game_cover: string
+  created_at: string
+}
+
+interface PlayedGamesState {
+  playedGames: PlayedGame[]
+  loading: boolean
+  fetchPlayedGames: (userId: string) => Promise<void>
+  togglePlayedGame: (userId: string, game: { id: string | number; title: string; img: string }) => Promise<void>
+}
+
+export const usePlayedGamesStore = create<PlayedGamesState>((set, get) => ({
+  playedGames: [],
+  loading: false,
+
+  fetchPlayedGames: async (userId) => {
+    set({ loading: true })
+    const { data, error } = await supabase
+      .from('played_games')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching played games:', error)
+    } else {
+      set({ playedGames: data as PlayedGame[] })
+    }
+    set({ loading: false })
+  },
+
+  togglePlayedGame: async (userId, game) => {
+    const gameId = game.id.toString()
+    const existing = get().playedGames.find(g => g.game_id === gameId && g.user_id === userId)
+
+    if (existing) {
+      // Optimistic remove
+      set(state => ({
+        playedGames: state.playedGames.filter(g => g.id !== existing.id)
+      }))
+      const { error } = await supabase
+        .from('played_games')
+        .delete()
+        .eq('id', existing.id)
+      
+      if (error) {
+        console.error('Error removing played game:', error)
+        // Revert on error (re-fetch)
+        await get().fetchPlayedGames(userId)
+      }
+    } else {
+      // Add new
+      const newGame = {
+        user_id: userId,
+        game_id: gameId,
+        game_title: game.title,
+        game_cover: game.img
+      }
+      const { data, error } = await supabase
+        .from('played_games')
+        .insert(newGame)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error adding played game:', error)
+      } else if (data) {
+        set(state => ({
+          playedGames: [data as PlayedGame, ...state.playedGames]
+        }))
+      }
+    }
+  }
+}))
+
 interface FriendsState {
   friends: Friend[]
   pendingRequests: Friend[]

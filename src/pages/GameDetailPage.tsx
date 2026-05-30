@@ -2,12 +2,15 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
-import { Star, ThumbsUp, ThumbsDown, MessageSquare, User, Send, MoreVertical, Pencil, Trash2, X } from 'lucide-react'
+import { Star, ThumbsUp, ThumbsDown, MessageSquare, User, Send, MoreVertical, Pencil, Trash2, X, Check } from 'lucide-react'
 import { Game } from '../types/game'
 import { fetchRawgGameDetail } from '../services/rawgApi'
-import { useAuthStore, useGameCommentsStore, GameComment } from '../store'
+import { useAuthStore, useGameCommentsStore, usePlayedGamesStore, GameComment } from '../store'
+import { LoadingScreen } from '../components/LoadingScreen'
+import { motion, AnimatePresence } from 'framer-motion'
 
 function UserHeading({ name, role, pfpUrl, size = 36 }: { name: string; role: string; pfpUrl?: string | null; size?: number }) {
+// ... (rest of helper components)
   return (
     <div className="flex items-center gap-3">
       <div className="rounded-full bg-[#773877] border border-white/10 flex items-center justify-center shrink-0 overflow-hidden" style={{ width: size, height: size }}>
@@ -288,6 +291,18 @@ export function GameDetailPage() {
     setSubmitting(false)
   }
 
+  const { playedGames, togglePlayedGame, fetchPlayedGames } = usePlayedGamesStore()
+  const isPlayed = playedGames.some(g => g.game_id === id && g.user_id === user?.id)
+
+  useEffect(() => {
+    if (user?.id) fetchPlayedGames(user.id)
+  }, [user?.id, fetchPlayedGames])
+
+  const handleTogglePlayed = async () => {
+    if (!user || !game || !id) return
+    await togglePlayedGame(user.id, { id, title: game.title, img: game.img })
+  }
+
   const handleLoadMore = () => {
     if (comments.length > 0) {
       fetchComments(id!, comments[comments.length - 1].created_at)
@@ -296,83 +311,22 @@ export function GameDetailPage() {
 
   const topLevelComments = comments.filter(c => !c.parent_id)
 
-  if (loading) {
-    return (
-      <div className="min-w-[1440px]">
-        <Header />
-
-        <div className="relative w-full h-[600px] overflow-hidden animate-pulse bg-white/5">
-          <div className="absolute inset-0 bg-gradient-to-t from-[#240025] via-transparent to-transparent" />
-          
-          <div className="relative max-w-[1440px] mx-auto px-12 h-full flex items-end pb-16 gap-12">
-            <div className="w-[300px] aspect-[3/4] rounded-2xl overflow-hidden bg-white/10 shrink-0">
-            </div>
-            <div className="flex flex-col gap-6 pb-4 w-full">
-              <div className="flex gap-2">
-                <div className="w-16 h-6 bg-white/10 rounded-full"></div>
-                <div className="w-20 h-6 bg-white/10 rounded-full"></div>
-              </div>
-              <div className="h-16 bg-white/20 rounded w-1/2"></div>
-              <div className="flex items-center gap-8">
-                <div className="h-6 bg-white/10 rounded w-32"></div>
-                <div className="h-6 bg-white/10 rounded w-40"></div>
-                <div className="h-8 bg-white/20 rounded w-24"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <section className="mx-auto px-12 py-16 max-w-[1440px] grid grid-cols-3 gap-16 animate-pulse">
-          <div className="col-span-2">
-            <div className="h-8 bg-white/20 rounded w-32 mb-8"></div>
-            <div className="space-y-4">
-              <div className="h-5 bg-white/10 rounded w-full"></div>
-              <div className="h-5 bg-white/10 rounded w-full"></div>
-              <div className="h-5 bg-white/10 rounded w-5/6"></div>
-              <div className="h-5 bg-white/10 rounded w-4/6"></div>
-            </div>
-          </div>
-          <div className="col-span-1">
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-8">
-              <div className="h-8 bg-white/20 rounded w-32 mb-6"></div>
-              <div className="space-y-6">
-                <div>
-                  <div className="h-4 bg-white/10 rounded w-24 mb-2"></div>
-                  <div className="h-5 bg-white/20 rounded w-32"></div>
-                </div>
-                <div>
-                  <div className="h-4 bg-white/10 rounded w-24 mb-2"></div>
-                  <div className="h-5 bg-white/20 rounded w-48"></div>
-                </div>
-                <div className="w-full h-14 bg-white/20 rounded-xl mt-8"></div>
-                <div className="w-full h-14 bg-white/10 rounded-xl"></div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <Footer />
-      </div>
-    )
-  }
-
-  if (error || !game) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <div className="flex-1 flex flex-col items-center justify-center text-red-500">
-          <p className="font-roboto text-2xl mb-4">{error || 'Game not found'}</p>
-          <button onClick={() => window.history.back()} className="text-white hover:underline">Go Back</button>
-        </div>
-        <Footer />
-      </div>
-    )
-  }
-
-  const displayPrice = pricing?.cheapestPrice || (pricingLoading ? '...' : 'Check Price')
-
   return (
     <div className="min-w-[1440px]">
+      <AnimatePresence>
+        {loading && !game && (
+          <motion.div
+            key="game-loading"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="fixed inset-0 z-[1000]"
+          >
+            <LoadingScreen />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Header />
 
       <div className="relative w-full h-[600px] overflow-hidden">
@@ -528,8 +482,23 @@ export function GameDetailPage() {
                   ADD TO WISHLIST
                 </button>
               )}
-              <button className="w-full bg-[#773877] text-white font-roboto font-bold py-4 rounded-xl hover:bg-[#8e448e] transition-all">
-                I'VE PLAYED THIS
+              <button 
+                onClick={handleTogglePlayed}
+                disabled={!user}
+                className={`w-full font-roboto font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 ${
+                  isPlayed 
+                    ? 'bg-green-500 text-white hover:bg-green-600 shadow-[0_0_20px_rgba(34,197,94,0.4)]' 
+                    : 'bg-[#773877] text-white hover:bg-[#8e448e] shadow-lg'
+                } disabled:opacity-50 mt-4`}
+              >
+                {isPlayed ? (
+                  <>
+                    <Check className="w-5 h-5" />
+                    PLAYED
+                  </>
+                ) : (
+                  "I'VE PLAYED THIS"
+                )}
               </button>
             </div>
           </div>

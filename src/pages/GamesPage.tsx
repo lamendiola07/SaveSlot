@@ -5,6 +5,8 @@ import { Footer } from '../components/Footer'
 import { useSearchStore } from '../store'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useGames } from '../hooks/useGames'
+import { LoadingScreen } from '../components/LoadingScreen'
+import { motion, AnimatePresence } from 'framer-motion'
 
 import { GameCard } from '../components/GameCard'
 
@@ -48,6 +50,20 @@ export function GamesPage({ forceType }: { forceType?: 'upcoming' | 'popular' })
 
   return (
     <div className="min-h-screen">
+      <AnimatePresence>
+        {loading && games.length === 0 && (
+          <motion.div
+            key="games-loading"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="fixed inset-0 z-[1000]"
+          >
+            <LoadingScreen />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Header />
       <main className="max-w-[1440px] mx-auto px-12 py-16">
         <div className="flex justify-between items-center mb-12">
