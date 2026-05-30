@@ -2,13 +2,16 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import {
   User, Heart, LayoutGrid, Calendar, MoreHorizontal, Pencil,
-  Trash2, Gamepad2, Camera, Star, MessageCircle, Repeat2, CheckCircle2
+  Trash2, Gamepad2, Camera, Star, MessageCircle, Repeat2, CheckCircle2,
+  ShieldAlert
 } from 'lucide-react'
+import { AnimatePresence } from 'framer-motion'
 
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 import { PfpCropModal } from '../components/PfpCropModal'
 import { CoverCropModal } from '../components/CoverCropModal'
+import { ReportModal } from '../components/ReportModal'
 import { useAuthStore, usePostsStore, usePlayedGamesStore } from '../store'
 import { supabase } from '../services/supabase'
 
@@ -34,7 +37,7 @@ function ratingColor(score: number) {
 export function UserProfilePage() {
   const { user: currentUser, isAuthenticated } = useAuthStore()
   const { userId } = useParams<{ userId?: string }>()
-  const { posts, likePost, editPost, deletePost, addComment, repostPost } = usePostsStore()
+  const { posts, likePost, editPost, deletePost, addComment, editComment, deleteComment, repostPost } = usePostsStore()
   const { playedGames, fetchPlayedGames, loading: gamesLoading } = usePlayedGamesStore()
   const navigate = useNavigate()
 
@@ -51,6 +54,14 @@ export function UserProfilePage() {
   const [editContent, setEditContent] = useState('')
   const [openCommentsId, setOpenCommentsId] = useState<string | null>(null)
   const [commentTexts, setCommentTexts] = useState<Record<string, string>>({})
+
+  // Comment interaction state
+  const [openCommentMenuId, setOpenCommentMenuId] = useState<string | null>(null)
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
+  const [commentEditValue, setCommentEditValue] = useState('')
+
+  // Reporting state
+  const [reportTarget, setReportTarget] = useState<{ id: string; type: 'post' | 'comment' } | null>(null)
 
 
   const isOwnProfile = !userId || userId === currentUser?.id
@@ -114,6 +125,17 @@ export function UserProfilePage() {
   }
   const cancelEdit = () => { setEditingId(null); setEditContent('') }
   const handleDelete = (postId: string) => { deletePost(postId); setOpenMenuId(null) }
+
+  // Comment helpers
+  const startEditComment = (commentId: string, current: string) => {
+    setEditingCommentId(commentId); setCommentEditValue(current); setOpenCommentMenuId(null)
+  }
+  const saveEditComment = (postId: string) => {
+    if (editingCommentId) editComment(postId, editingCommentId, commentEditValue)
+    setEditingCommentId(null); setCommentEditValue('')
+  }
+  const cancelEditComment = () => { setEditingCommentId(null); setCommentEditValue('') }
+  const handleDeleteComment = (postId: string, commentId: string) => { deleteComment(postId, commentId); setOpenCommentMenuId(null) }
 
   const submitComment = (postId: string) => {
     const text = commentTexts[postId]?.trim()
@@ -306,29 +328,38 @@ export function UserProfilePage() {
                             </div>
 
                             {/* Ellipsis */}
-                            {isOwnProfile && (
-                              <div className="relative shrink-0">
-                                <button
-                                  onClick={() => setOpenMenuId(isMenuOpen ? null : post.id)}
-                                  className="w-8 h-8 rounded-full flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10 transition-colors"
-                                >
-                                  <MoreHorizontal className="w-4 h-4" />
-                                </button>
-                                {isMenuOpen && (
-                                  <>
-                                    <div className="fixed inset-0 z-10" onClick={() => setOpenMenuId(null)} />
-                                    <div className="absolute right-0 top-full mt-1 w-36 bg-[#2a0838] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-20">
-                                      <button onClick={() => startEdit(post.id, post.content)} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-white/70 hover:text-white hover:bg-white/5 transition-colors text-sm font-roboto">
-                                        <Pencil className="w-3.5 h-3.5 text-[#c77fc7]" />Edit
+                            <div className="relative shrink-0">
+                              <button
+                                onClick={() => setOpenMenuId(isMenuOpen ? null : post.id)}
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10 transition-colors"
+                              >
+                                <MoreHorizontal className="w-4 h-4" />
+                              </button>
+                              {isMenuOpen && (
+                                <>
+                                  <div className="fixed inset-0 z-10" onClick={() => setOpenMenuId(null)} />
+                                  <div className="absolute right-0 top-full mt-1 w-36 bg-[#2a0838] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-20">
+                                    {post.userId === currentUser?.id ? (
+                                      <>
+                                        <button onClick={() => startEdit(post.id, post.content)} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-white/70 hover:text-white hover:bg-white/5 transition-colors text-sm font-roboto">
+                                          <Pencil className="w-3.5 h-3.5 text-[#c77fc7]" />Edit
+                                        </button>
+                                        <button onClick={() => handleDelete(post.id)} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-white/70 hover:text-red-400 hover:bg-white/5 transition-colors text-sm font-roboto">
+                                          <Trash2 className="w-3.5 h-3.5 text-red-400/70" />Delete
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <button 
+                                        onClick={() => { setReportTarget({ id: post.id, type: 'post' }); setOpenMenuId(null); }}
+                                        className="flex items-center gap-2.5 w-full px-4 py-2.5 text-white/70 hover:text-red-400 hover:bg-white/5 transition-colors text-sm font-roboto"
+                                      >
+                                        <ShieldAlert className="w-3.5 h-3.5 text-red-400/70" />Report Post
                                       </button>
-                                      <button onClick={() => handleDelete(post.id)} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-white/70 hover:text-red-400 hover:bg-white/5 transition-colors text-sm font-roboto">
-                                        <Trash2 className="w-3.5 h-3.5 text-red-400/70" />Delete
-                                      </button>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            )}
+                                    )}
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           </div>
 
                           {/* Star rating */}
@@ -376,21 +407,21 @@ export function UserProfilePage() {
                             <div className="mt-4 pt-4 border-t border-white/10">
                               <div className="flex items-center gap-2 mb-2">
                                 <Gamepad2 className="w-4 h-4 text-orange-400 shrink-0" />
-                                <p className="font-roboto font-bold text-white text-lg leading-tight truncate">
+                                <p className="font-roboto font-bold text-white text-sm leading-tight truncate">
                                   {post.taggedGame.title}
                                 </p>
                               </div>
                               <div className="flex items-center gap-3 flex-wrap">
                                 {post.taggedGame.rating != null && (
-                                  <span className={`font-roboto font-bold text-sm px-2.5 py-1 rounded-lg border ${ratingColor(post.taggedGame.rating)}`}>
+                                  <span className={`font-roboto font-bold text-xs px-2.5 py-1 rounded-lg border ${ratingColor(post.taggedGame.rating)}`}>
                                     Metacritic {post.taggedGame.rating}
                                   </span>
                                 )}
                                 {post.taggedGame.genres && post.taggedGame.genres.length > 0 && (
-                                  <span className="font-roboto text-white/50 text-sm">{post.taggedGame.genres.join(' · ')}</span>
+                                  <span className="font-roboto text-white/50 text-xs">{post.taggedGame.genres.join(' · ')}</span>
                                 )}
                                 {post.taggedGame.released && (
-                                  <span className="font-roboto text-white/35 text-sm">
+                                  <span className="font-roboto text-white/35 text-xs">
                                     {new Date(post.taggedGame.released).getFullYear()}
                                   </span>
                                 )}
@@ -401,10 +432,10 @@ export function UserProfilePage() {
                           {/* ── Actions ── */}
                           <div className="mt-4 pt-3 border-t border-white/5 flex items-center gap-5">
                             {isEditing ? (
-                              <>
+                              <div className="flex gap-2">
                                 <button onClick={saveEdit} className="bg-[#773877] hover:bg-[#8f4a8f] text-white text-xs font-roboto font-medium px-4 py-1.5 rounded-lg transition-colors">Save</button>
                                 <button onClick={cancelEdit} className="bg-white/10 hover:bg-white/20 text-white/70 text-xs font-roboto px-4 py-1.5 rounded-lg transition-colors">Cancel</button>
-                              </>
+                              </div>
                             ) : (
                               <>
                                 {/* Like */}
@@ -421,12 +452,6 @@ export function UserProfilePage() {
                                   <MessageCircle className="w-4 h-4" />
                                   {post.comments.length > 0 && <span>{post.comments.length}</span>}
                                 </button>
-
-                                {/* Repost */}
-                                <button onClick={() => repostPost(post.id, currentUser?.id || '')} className={`flex items-center gap-1.5 text-xs font-roboto transition-colors ${currentUser && post.repostedBy.includes(currentUser.id) ? 'text-green-400' : 'text-white/35 hover:text-green-400'}`}>
-                                  <Repeat2 className="w-4 h-4" />
-                                  {post.reposts > 0 && <span>{post.reposts}</span>}
-                                </button>
                               </>
                             )}
                           </div>
@@ -435,20 +460,79 @@ export function UserProfilePage() {
                           {commentsOpen && !isEditing && (
                             <div className="mt-3 pt-3 border-t border-white/5 flex flex-col gap-2.5">
                               {/* Existing comments */}
-                              {post.comments.map(c => (
-                                <div key={c.id} className="flex gap-2.5">
-                                  <div className="w-7 h-7 rounded-full bg-[#773877] border border-white/20 flex items-center justify-center overflow-hidden shrink-0 mt-0.5">
-                                    {c.pfpUrl ? <img src={c.pfpUrl} alt="" className="w-full h-full object-cover" /> : <User className="w-3 h-3 text-white" />}
-                                  </div>
-                                  <div className="flex-1 bg-white/5 rounded-xl px-3 py-2">
-                                    <div className="flex items-baseline gap-2">
-                                      <p className="font-roboto font-semibold text-white text-xs">{c.username}</p>
-                                      <p className="font-roboto text-white/30 text-[10px]">{timeAgo(c.createdAt)}</p>
+                              {post.comments.map(c => {
+                                const isCommentOwner = c.userId === currentUser?.id
+                                const isCommentEditing = editingCommentId === c.id
+                                const isCommentMenuOpen = openCommentMenuId === c.id
+
+                                return (
+                                  <div key={c.id} className="flex gap-2.5 group/comment">
+                                    <div className="w-7 h-7 rounded-full bg-[#773877] border border-white/20 flex items-center justify-center overflow-hidden shrink-0 mt-0.5">
+                                      {c.pfpUrl ? <img src={c.pfpUrl} alt="" className="w-full h-full object-cover" /> : <User className="w-3 h-3 text-white" />}
                                     </div>
-                                    <p className="font-roboto text-white/75 text-xs mt-0.5 leading-relaxed">{c.content}</p>
+                                    <div className="flex-1 bg-white/5 rounded-xl px-3 py-2 relative">
+                                      <div className="flex items-baseline justify-between gap-2">
+                                        <div className="flex items-baseline gap-2">
+                                          <p className="font-roboto font-semibold text-white text-xs">{c.username}</p>
+                                          <p className="font-roboto text-white/30 text-[10px]">{timeAgo(c.createdAt)}</p>
+                                        </div>
+                                        
+                                        <div className="relative">
+                                          <button 
+                                            onClick={() => setOpenCommentMenuId(isCommentMenuOpen ? null : c.id)}
+                                            className="p-1 rounded-full text-white/20 hover:text-white hover:bg-white/5 transition-colors"
+                                          >
+
+                                            <MoreHorizontal className="w-3.5 h-3.5" />
+                                          </button>
+                                          {isCommentMenuOpen && (
+                                            <>
+                                              <div className="fixed inset-0 z-10" onClick={() => setOpenCommentMenuId(null)} />
+                                              <div className="absolute right-0 top-full mt-1 w-32 bg-[#2a0838] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-20">
+                                                {isCommentOwner ? (
+                                                  <>
+                                                    <button onClick={() => startEditComment(c.id, c.content)} className="flex items-center gap-2 w-full px-3 py-1.5 text-white/70 hover:text-white hover:bg-white/5 transition-colors text-[11px] font-roboto">
+                                                      <Pencil className="w-3 h-3 text-[#c77fc7]" />Edit
+                                                    </button>
+                                                    <button onClick={() => handleDeleteComment(post.id, c.id)} className="flex items-center gap-2 w-full px-3 py-1.5 text-white/70 hover:text-red-400 hover:bg-white/5 transition-colors text-[11px] font-roboto">
+                                                      <Trash2 className="w-3 h-3 text-red-400/70" />Delete
+                                                    </button>
+                                                  </>
+                                                ) : (
+                                                  <button 
+                                                    onClick={() => { setReportTarget({ id: c.id, type: 'comment' }); setOpenCommentMenuId(null); }}
+                                                    className="flex items-center gap-2 w-full px-3 py-1.5 text-white/70 hover:text-red-400 hover:bg-white/5 transition-colors text-[11px] font-roboto"
+                                                  >
+                                                    <ShieldAlert className="w-3 h-3 text-red-400/70" />Report Comment
+                                                  </button>
+                                                )}
+                                              </div>
+                                            </>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {isCommentEditing ? (
+                                        <div className="mt-2 flex flex-col gap-2">
+                                          <textarea
+                                            autoFocus
+                                            value={commentEditValue}
+                                            onChange={e => setCommentEditValue(e.target.value)}
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white text-xs font-roboto outline-none focus:border-[#773877] resize-none"
+                                            rows={2}
+                                          />
+                                          <div className="flex justify-end gap-2">
+                                            <button onClick={() => saveEditComment(post.id)} className="text-[#c77fc7] text-[10px] font-bold hover:brightness-110">Save</button>
+                                            <button onClick={cancelEditComment} className="text-white/40 text-[10px] font-bold hover:text-white">Cancel</button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <p className="font-roboto text-white/75 text-xs mt-0.5 leading-relaxed">{c.content}</p>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                )
+                              })}
 
                               {/* New comment input */}
                               <div className="flex gap-2.5 items-center">
@@ -517,6 +601,16 @@ export function UserProfilePage() {
       {showCoverModal && (
         <CoverCropModal onClose={() => setShowCoverModal(false)} onSave={handleCoverSave} />
       )}
+
+      <AnimatePresence>
+        {reportTarget && (
+          <ReportModal 
+            targetId={reportTarget.id} 
+            targetType={reportTarget.type} 
+            onClose={() => setReportTarget(null)} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -49,6 +49,8 @@ interface PostsState {
   editPost: (postId: string, content: string) => void
   deletePost: (postId: string) => void
   addComment: (postId: string, data: Omit<Comment, 'id' | 'createdAt'>) => void
+  editComment: (postId: string, commentId: string, content: string) => void
+  deleteComment: (postId: string, commentId: string) => void
   repostPost: (postId: string, userId: string) => void
 }
 
@@ -134,6 +136,34 @@ export const usePostsStore = create<PostsState>((set) => ({
       const posts = state.posts.map(p =>
         p.id === postId ? { ...p, comments: [...p.comments, comment] } : p
       )
+      save(posts)
+      return { posts }
+    })
+  },
+
+  editComment: (postId, commentId, content) => {
+    set(state => {
+      const posts = state.posts.map(p => {
+        if (p.id !== postId) return p
+        return {
+          ...p,
+          comments: p.comments.map(c => c.id === commentId ? { ...c, content } : c)
+        }
+      })
+      save(posts)
+      return { posts }
+    })
+  },
+
+  deleteComment: (postId, commentId) => {
+    set(state => {
+      const posts = state.posts.map(p => {
+        if (p.id !== postId) return p
+        return {
+          ...p,
+          comments: p.comments.filter(c => c.id !== commentId)
+        }
+      })
       save(posts)
       return { posts }
     })
@@ -721,6 +751,48 @@ export const useGameCommentsStore = create<GameCommentsState>((set, get) => ({
         comments: [...state.comments, data as unknown as GameComment]
       }))
     }
+  }
+}))
+
+export interface Report {
+  id: string
+  reporterId: string
+  targetId: string
+  targetType: 'post' | 'comment'
+  offense: string
+  details?: string
+  createdAt: string
+}
+
+interface ReportsState {
+  reports: Report[]
+  addReport: (data: Omit<Report, 'id' | 'createdAt'>) => void
+}
+
+const REPORTS_KEY = 'saveslot_reports'
+
+function loadReports(): Report[] {
+  try { return JSON.parse(localStorage.getItem(REPORTS_KEY) || '[]') }
+  catch { return [] }
+}
+
+function saveReports(reports: Report[]) {
+  localStorage.setItem(REPORTS_KEY, JSON.stringify(reports))
+}
+
+export const useReportsStore = create<ReportsState>((set) => ({
+  reports: loadReports(),
+  addReport: (data) => {
+    const report: Report = {
+      ...data,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+    }
+    set(state => {
+      const reports = [...state.reports, report]
+      saveReports(reports)
+      return { reports }
+    })
   }
 }))
 

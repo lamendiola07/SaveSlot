@@ -2,15 +2,15 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
-import { Star, ThumbsUp, ThumbsDown, MessageSquare, User, Send, MoreVertical, Pencil, Trash2, X, Check } from 'lucide-react'
+import { Star, ThumbsUp, ThumbsDown, MessageSquare, User, Send, MoreVertical, Pencil, Trash2, Check, ShieldAlert } from 'lucide-react'
 import { Game } from '../types/game'
 import { fetchRawgGameDetail } from '../services/rawgApi'
 import { useAuthStore, useGameCommentsStore, usePlayedGamesStore, GameComment } from '../store'
 import { LoadingScreen } from '../components/LoadingScreen'
+import { ReportModal } from '../components/ReportModal'
 import { motion, AnimatePresence } from 'framer-motion'
 
 function UserHeading({ name, role, pfpUrl, size = 36 }: { name: string; role: string; pfpUrl?: string | null; size?: number }) {
-// ... (rest of helper components)
   return (
     <div className="flex items-center gap-3">
       <div className="rounded-full bg-[#773877] border border-white/10 flex items-center justify-center shrink-0 overflow-hidden" style={{ width: size, height: size }}>
@@ -32,6 +32,7 @@ function CommentItem({
   onReply,
   onEdit,
   onDelete,
+  onReport,
   isReply = false
 }: {
   comment: GameComment,
@@ -41,6 +42,7 @@ function CommentItem({
   onReply?: (parentId: string, text: string) => void,
   onEdit: (id: string, text: string) => void,
   onDelete: (id: string) => void,
+  onReport: (id: string) => void,
   isReply?: boolean
 }) {
   const [showReply, setShowReply] = useState(false)
@@ -91,7 +93,7 @@ function CommentItem({
           size={isReply ? 32 : 36}
         />
         
-        {isOwn && !isEditing && (
+        {!isEditing && (
           <div className="relative" ref={menuRef}>
             <button 
               onClick={() => setShowMenu(!showMenu)}
@@ -101,19 +103,30 @@ function CommentItem({
             </button>
             
             {showMenu && (
-              <div className="absolute right-0 top-full mt-1 w-32 bg-[#2a0838] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-20">
-                <button 
-                  onClick={() => { setIsEditing(true); setShowMenu(false); }}
-                  className="flex items-center gap-2.5 w-full px-3 py-2 text-white/70 hover:text-white hover:bg-white/5 transition-colors text-xs font-roboto"
-                >
-                  <Pencil className="w-3.5 h-3.5 text-[#c77fc7]" /> Edit
-                </button>
-                <button 
-                  onClick={() => { onDelete(comment.id); setShowMenu(false); }}
-                  className="flex items-center gap-2.5 w-full px-3 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors text-xs font-roboto"
-                >
-                  <Trash2 className="w-3.5 h-3.5" /> Delete
-                </button>
+              <div className="absolute right-0 top-full mt-1 w-36 bg-[#2a0838] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-20">
+                {isOwn ? (
+                  <>
+                    <button 
+                      onClick={() => { setIsEditing(true); setShowMenu(false); }}
+                      className="flex items-center gap-2.5 w-full px-3 py-2 text-white/70 hover:text-white hover:bg-white/5 transition-colors text-xs font-roboto"
+                    >
+                      <Pencil className="w-3.5 h-3.5 text-[#c77fc7]" /> Edit
+                    </button>
+                    <button 
+                      onClick={() => { onDelete(comment.id); setShowMenu(false); }}
+                      className="flex items-center gap-2.5 w-full px-3 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors text-xs font-roboto"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Delete
+                    </button>
+                  </>
+                ) : (
+                  <button 
+                    onClick={() => { onReport(comment.id); setShowMenu(false); }}
+                    className="flex items-center gap-2.5 w-full px-3 py-2 text-white/70 hover:text-red-400 hover:bg-white/5 transition-colors text-xs font-roboto"
+                  >
+                    <ShieldAlert className="w-3.5 h-3.5 text-red-400/70" /> Report Comment
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -132,13 +145,13 @@ function CommentItem({
           <div className="flex justify-end gap-2">
             <button 
               onClick={() => { setIsEditing(false); setEditValue(comment.content); }}
-              className="px-3 py-1 text-xs text-white/60 hover:text-white"
+              className="px-3 py-1 text-xs text-white/80 hover:text-white"
             >
               Cancel
             </button>
             <button 
               onClick={handleEditSubmit}
-              className="px-4 py-1 bg-[#773877] text-white rounded font-bold text-xs hover:bg-[#8f4a8f]"
+              className="px-4 py-2 bg-[#773877] text-white rounded font-bold text-xs hover:bg-[#8f4a8f]"
             >
               Save
             </button>
@@ -174,11 +187,17 @@ function CommentItem({
       </div>
 
       {showReply && user && !isReply && (
-        <div className="flex gap-2 mt-2">
+        <div className="flex gap-2 mt-2 ml-7 min-h-[40px] rounded-sm">
           <input 
             type="text" 
             value={replyText} 
             onChange={e => setReplyText(e.target.value)} 
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && replyText.trim()) {
+                e.preventDefault()
+                handleReplySubmit()
+              }
+            }}
             placeholder="Write a reply..." 
             className="flex-1 bg-white/5 border border-white/10 rounded px-3 py-1.5 text-white text-sm outline-none focus:border-[#773877]" 
           />
@@ -197,7 +216,8 @@ function CommentThread({
   onDislike, 
   onReply,
   onEdit,
-  onDelete
+  onDelete,
+  onReport
 }: { 
   comment: GameComment, 
   replies: GameComment[], 
@@ -206,7 +226,8 @@ function CommentThread({
   onDislike: (id: string, userId: string) => void, 
   onReply: (parentId: string, text: string) => void,
   onEdit: (id: string, text: string) => void,
-  onDelete: (id: string) => void
+  onDelete: (id: string) => void,
+  onReport: (id: string) => void
 }) {
   return (
     <div className="flex flex-col">
@@ -218,6 +239,7 @@ function CommentThread({
         onReply={onReply}
         onEdit={onEdit}
         onDelete={onDelete}
+        onReport={onReport}
       />
 
       {replies.length > 0 && (
@@ -231,6 +253,7 @@ function CommentThread({
               onDislike={onDislike}
               onEdit={onEdit}
               onDelete={onDelete}
+              onReport={onReport}
               isReply
             />
           ))}
@@ -250,6 +273,7 @@ export function GameDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [commentInput, setCommentInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [reportTarget, setReportTarget] = useState<string | null>(null)
 
   const { 
     comments, 
@@ -311,6 +335,21 @@ export function GameDetailPage() {
 
   const topLevelComments = comments.filter(c => !c.parent_id)
 
+  const displayPrice = pricing?.cheapestPrice || (pricingLoading ? '...' : 'Check Price')
+
+  if (error || (!loading && !game)) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <div className="flex-1 flex flex-col items-center justify-center text-red-500">
+          <p className="font-roboto text-2xl mb-4">{error || 'Game not found'}</p>
+          <button onClick={() => window.history.back()} className="text-white hover:underline">Go Back</button>
+        </div>
+        <Footer />
+      </div>
+    )
+  }
+
   return (
     <div className="min-w-[1440px]">
       <AnimatePresence>
@@ -329,183 +368,203 @@ export function GameDetailPage() {
 
       <Header />
 
-      <div className="relative w-full h-[600px] overflow-hidden">
-        <img src={game.img} alt={game.title} className="absolute inset-0 w-full h-full object-cover opacity-40 blur-sm" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#240025] via-transparent to-transparent" />
-        
-        <div className="relative max-w-[1440px] mx-auto px-12 h-full flex items-end pb-16 gap-12">
-          <div className="w-[300px] aspect-[3/4] rounded-2xl overflow-hidden border-4 border-white/20 shadow-2xl shrink-0">
-            <img src={game.img} alt={game.title} className="w-full h-full object-cover" />
-          </div>
-          <div className="flex flex-col gap-6 pb-4">
-            <div className="flex flex-wrap gap-2">
-              {game.tags.map(tag => (
-                <span key={tag} className="bg-white/10 text-white px-3 py-1 rounded-full text-sm backdrop-blur-md">
-                  {tag}
-                </span>
-              ))}
-            </div>
-            <div className="flex items-center gap-4">
-              <h1 className="font-roboto text-6xl text-white font-bold drop-shadow-lg">{game.title}</h1>
-              {pricing?.isOnSale && (
-                <span className="bg-red-600 text-white px-3 py-1 rounded-lg font-bold text-xl shadow-lg animate-bounce">
-                  {pricing.savings}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-8 text-white/80 font-roboto text-xl">
-              <div className="flex items-center gap-2">
-                <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" />
-                <span>{game.rating || 'N/A'} Metacritic</span>
-              </div>
-              <div>Released: {game.released}</div>
-              <div className="flex items-center gap-3">
-                <span className={`text-3xl font-bold ${pricing?.isOnSale ? 'text-green-400' : 'text-white'}`}>
-                  {displayPrice}
-                </span>
-                {pricing?.isOnSale && (
-                  <span className="text-white/40 line-through text-lg">
-                    {pricing.normalPrice}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <section className="mx-auto px-12 py-16 max-w-[1440px] grid grid-cols-3 gap-16">
-        <div className="col-span-2">
-          <h2 className="font-roboto text-3xl text-white mb-8 border-b border-white/10 pb-4">About</h2>
-          <div 
-            className="font-roboto text-white/70 text-lg leading-relaxed space-y-4"
-            dangerouslySetInnerHTML={{ __html: game.desc || 'No description available for this game.' }}
-          />
-          
-          <div className="mt-20">
-            <h2 className="font-roboto text-3xl text-white mb-8 border-b border-white/10 pb-4">Comments</h2>
+      {game && (
+        <>
+          <div className="relative w-full h-[600px] overflow-hidden">
+            <img src={game.img} alt={game.title} className="absolute inset-0 w-full h-full object-cover opacity-40 blur-sm" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#240025] via-transparent to-transparent" />
             
-            {/* Comment Input */}
-            <div className="flex-1 flex flex-col gap-3 max-h-150px] mb-10">
-              <div className="relative">
-                <textarea
-                  value={commentInput}
-                  onChange={(e) => setCommentInput(e.target.value)}
-                  placeholder={user ? "Add a comment..." : "Sign in to join the conversation"}
-                  disabled={!user || submitting}
-                  className="w-full bg-white/5 border-2 border-white/10 rounded-xl p-4 pr-28 text-white font-roboto text-[15px] outline-none focus:border-[#773877] transition-all min-h-[20px] max-h-[60px] resize-none disabled:opacity-50"
-                />
-                <button
-                  onClick={handlePostComment}
-                  disabled={!user || !commentInput.trim() || submitting}
-                  className="absolute right-3 bottom-4 inline-flex items-center gap-2 bg-[#773877] hover:bg-[#8f4a8f] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-4 py-2 rounded-xl transition-all shadow-lg"
-                >
-                  {submitting ? 'Posting...' : 'Post'}
-                  <Send className="w-4 h-4" />
-                </button>
+            <div className="relative max-w-[1440px] mx-auto px-12 h-full flex items-end pb-16 gap-12">
+              <div className="w-[300px] aspect-[3/4] rounded-2xl overflow-hidden border-4 border-white/20 shadow-2xl shrink-0">
+                <img src={game.img} alt={game.title} className="w-full h-full object-cover" />
               </div>
-            </div>
-
-            <div className="flex flex-col">
-              {topLevelComments.map((comment) => (
-                <CommentThread 
-                  key={comment.id} 
-                  comment={comment}
-                  replies={comments.filter(c => c.parent_id === comment.id)}
-                  user={user}
-                  onLike={likeComment}
-                  onDislike={dislikeComment}
-                  onReply={(parentId, text) => addReply(id!, parentId, user!.id, text)}
-                  onEdit={editComment}
-                  onDelete={deleteComment}
-                />
-              ))}
-              
-              {comments.length === 0 && !commentsLoading && (
-                <div className="py-12 text-center border-2 border-dashed border-white/5 rounded-2xl">
-                  <p className="font-roboto text-white/20 text-lg">No comments yet. Be the first to share your thoughts!</p>
+              <div className="flex flex-col gap-6 pb-4">
+                <div className="flex flex-wrap gap-2">
+                  {game.tags.map(tag => (
+                    <span key={tag} className="bg-white/10 text-white px-3 py-1 rounded-full text-sm backdrop-blur-md">
+                      {tag}
+                    </span>
+                  ))}
                 </div>
-              )}
-
-              {commentsLoading && (
-                <div className="flex justify-center py-8">
-                  <div className="w-8 h-8 border-4 border-[#773877] border-t-transparent rounded-full animate-spin" />
+                <div className="flex items-center gap-4">
+                  <h1 className="font-roboto text-6xl text-white font-bold drop-shadow-lg">{game.title}</h1>
+                  {pricing?.isOnSale && (
+                    <span className="bg-red-600 text-white px-3 py-1 rounded-lg font-bold text-xl shadow-lg animate-bounce">
+                      {pricing.savings}
+                    </span>
+                  )}
                 </div>
-              )}
-
-              {hasMore && !commentsLoading && (
-                <button 
-                  onClick={handleLoadMore}
-                  className="mt-8 py-3 w-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-xl font-roboto font-medium transition-all border border-white/5"
-                >
-                  Load More Comments
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="col-span-1">
-          <div className="bg-white/5 border border-white/10 rounded-3xl p-8 sticky top-8">
-            <h3 className="font-roboto text-2xl text-white mb-6">Game Info</h3>
-            <div className="space-y-6">
-              {pricing?.storeName && (
-                <div className="flex items-center gap-3 bg-white/5 p-4 rounded-xl border border-white/10">
-                  {pricing.storeIcon && <img src={pricing.storeIcon} alt="" className="w-8 h-8" />}
-                  <div>
-                    <p className="text-white/40 text-xs uppercase tracking-wider">Best Deal at</p>
-                    <p className="text-white font-bold">{pricing.storeName}</p>
+                <div className="flex items-center gap-8 text-white/80 font-roboto text-xl">
+                  <div className="flex items-center gap-2">
+                    <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" />
+                    <span>{game.rating || 'N/A'} Metacritic</span>
+                  </div>
+                  <div>Released: {game.released}</div>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-3xl font-bold ${pricing?.isOnSale ? 'text-green-400' : 'text-white'}`}>
+                      {displayPrice}
+                    </span>
+                    {pricing?.isOnSale && (
+                      <span className="text-white/40 line-through text-lg">
+                        {pricing.normalPrice}
+                      </span>
+                    )}
                   </div>
                 </div>
-              )}
-              {game.developers && game.developers.length > 0 && (
-                <div>
-                  <p className="text-white/40 text-sm mb-1 uppercase tracking-wider">Developer</p>
-                  <p className="text-white">{game.developers.join(', ')}</p>
-                </div>
-              )}
-              <div>
-                <p className="text-white/40 text-sm mb-1 uppercase tracking-wider">Platforms</p>
-                <p className="text-white">PC, PS5, Xbox Series X/S</p>
               </div>
-              {pricing?.dealLink ? (
-                <a 
-                  href={pricing.dealLink} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="block w-full bg-green-600 text-white text-center font-roboto font-bold py-4 rounded-xl hover:bg-green-500 transition-all mt-8"
-                >
-                  VIEW DEAL ON {pricing.storeName?.toUpperCase()}
-                </a>
-              ) : (
-                <button className="w-full bg-white text-black font-roboto font-bold py-4 rounded-xl hover:bg-white/90 transition-all mt-8">
-                  ADD TO WISHLIST
-                </button>
-              )}
-              <button 
-                onClick={handleTogglePlayed}
-                disabled={!user}
-                className={`w-full font-roboto font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 ${
-                  isPlayed 
-                    ? 'bg-green-500 text-white hover:bg-green-600 shadow-[0_0_20px_rgba(34,197,94,0.4)]' 
-                    : 'bg-[#773877] text-white hover:bg-[#8e448e] shadow-lg'
-                } disabled:opacity-50 mt-4`}
-              >
-                {isPlayed ? (
-                  <>
-                    <Check className="w-5 h-5" />
-                    PLAYED
-                  </>
-                ) : (
-                  "I'VE PLAYED THIS"
-                )}
-              </button>
             </div>
           </div>
-        </div>
-      </section>
+
+          <section className="mx-auto px-12 py-16 max-w-[1440px] grid grid-cols-3 gap-16">
+            <div className="col-span-2">
+              <h2 className="font-roboto text-3xl text-white mb-8 border-b border-white/10 pb-4">About</h2>
+              <div 
+                className="font-roboto text-white/70 text-lg leading-relaxed space-y-4"
+                dangerouslySetInnerHTML={{ __html: game.desc || 'No description available for this game.' }}
+              />
+              
+              <div className="mt-20">
+                <h2 className="font-roboto text-3xl text-white mb-8 border-b border-white/10 pb-4">Comments</h2>
+                
+                {/* Comment Input */}
+                <div className="flex-1 flex flex-col gap-3 max-h-200px] mb-10">
+                  <div className="relative">
+                    <textarea
+                      value={commentInput}
+                      onChange={(e) => setCommentInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey && user && !submitting && commentInput.trim()) {
+                          e.preventDefault()
+                          handlePostComment()
+                        }
+                      }}
+                      placeholder={user ? "Add a comment..." : "Sign in to join the conversation"}
+                      disabled={!user || submitting}
+                      className="w-full bg-white/5 border-2 border-white/10 rounded-xl p-4 pr-28 text-white font-roboto text-[15px] outline-none focus:border-[#773877] transition-all min-h-[20px] max-h-[60px] resize-none disabled:opacity-50"
+                    />
+                    <button
+                      onClick={handlePostComment}
+                      disabled={!user || !commentInput.trim() || submitting}
+                      className="absolute right-2 bottom-[18px] inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-4 py-2 transition-all"
+                    >
+                      <Send className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col">
+                  {topLevelComments.map((comment) => (
+                    <CommentThread 
+                      key={comment.id} 
+                      comment={comment}
+                      replies={comments.filter(c => c.parent_id === comment.id)}
+                      user={user}
+                      onLike={likeComment}
+                      onDislike={dislikeComment}
+                      onReply={(parentId, text) => addReply(id!, parentId, user!.id, text)}
+                      onEdit={editComment}
+                      onDelete={deleteComment}
+                      onReport={(commentId) => setReportTarget(commentId)}
+                    />
+                  ))}
+                  
+                  {comments.length === 0 && !commentsLoading && (
+                    <div className="py-12 text-center border-2 border-dashed border-white/5 rounded-2xl">
+                      <p className="font-roboto text-white/20 text-lg">No comments yet. Be the first to share your thoughts!</p>
+                    </div>
+                  )}
+
+                  {commentsLoading && (
+                    <div className="flex justify-center py-8">
+                      <div className="w-8 h-8 border-4 border-[#773877] border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+
+                  {hasMore && !commentsLoading && (
+                    <button 
+                      onClick={handleLoadMore}
+                      className="mt-8 py-3 w-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-xl font-roboto font-medium transition-all border border-white/5"
+                    >
+                      Load More Comments
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="col-span-1">
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-8 sticky top-8">
+                <h3 className="font-roboto text-2xl text-white mb-6">Game Info</h3>
+                <div className="space-y-6">
+                  {pricing?.storeName && (
+                    <div className="flex items-center gap-3 bg-white/5 p-4 rounded-xl border border-white/10">
+                      {pricing.storeIcon && <img src={pricing.storeIcon} alt="" className="w-8 h-8" />}
+                      <div>
+                        <p className="text-white/40 text-xs uppercase tracking-wider">Best Deal at</p>
+                        <p className="text-white font-bold">{pricing.storeName}</p>
+                      </div>
+                    </div>
+                  )}
+                  {game.developers && game.developers.length > 0 && (
+                    <div>
+                      <p className="text-white/40 text-sm mb-1 uppercase tracking-wider">Developer</p>
+                      <p className="text-white">{game.developers.join(', ')}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-white/40 text-sm mb-1 uppercase tracking-wider">Platforms</p>
+                    <p className="text-white">PC, PS5, Xbox Series X/S</p>
+                  </div>
+                  {pricing?.dealLink ? (
+                    <a 
+                      href={pricing.dealLink} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="block w-full bg-green-600 text-white text-center font-roboto font-bold py-4 rounded-xl hover:bg-green-500 transition-all mt-8"
+                    >
+                      VIEW DEAL ON {pricing.storeName?.toUpperCase()}
+                    </a>
+                  ) : (
+                    <button className="w-full bg-white text-black font-roboto font-bold py-4 rounded-xl hover:bg-white/90 transition-all mt-8">
+                      ADD TO WISHLIST
+                    </button>
+                  )}
+                  <button 
+                    onClick={handleTogglePlayed}
+                    disabled={!user}
+                    className={`w-full font-roboto font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 ${
+                      isPlayed 
+                        ? 'bg-green-500 text-white hover:bg-green-600 shadow-[0_0_20px_rgba(34,197,94,0.4)]' 
+                        : 'bg-[#773877] text-white hover:bg-[#8e448e] shadow-lg'
+                    } disabled:opacity-50 mt-4`}
+                  >
+                    {isPlayed ? (
+                      <>
+                        <Check className="w-5 h-5" />
+                        PLAYED
+                      </>
+                    ) : (
+                      "I'VE PLAYED THIS"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
 
       <Footer />
+
+      <AnimatePresence>
+        {reportTarget && (
+          <ReportModal 
+            targetId={reportTarget} 
+            targetType="comment" 
+            onClose={() => setReportTarget(null)} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
