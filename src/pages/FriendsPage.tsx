@@ -11,27 +11,38 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 
-// Tenor public demo key
-const TENOR_KEY = 'LIVDSRZULELA'
+const GIPHY_KEY = import.meta.env.VITE_GIPHY_API_KEY
 
-async function fetchTenorGifs(query: string) {
+async function fetchGiphyGifs(query: string) {
+  if (!GIPHY_KEY) return []
+  
   const params = new URLSearchParams({
-    key: TENOR_KEY,
-    limit: '20',
-    contentfilter: 'medium',
-    media_filter: 'tinygif,gif',
+    api_key: GIPHY_KEY,
+    limit: '24',
+    rating: 'g',
   })
-  const base = 'https://tenor.googleapis.com/v2'
-  const url = query.trim()
-    ? `${base}/search?${params}&q=${encodeURIComponent(query.trim())}`
-    : `${base}/featured?${params}`
-  const res = await fetch(url)
-  const json = await res.json()
-  return (json.results as any[]).map(g => ({
-    id: g.id as string,
-    url: g.media_formats.gif.url as string,
-    preview: g.media_formats.tinygif.url as string,
-  }))
+  
+  const isSearch = query.trim().length > 0
+  const endpoint = isSearch ? 'search' : 'trending'
+  if (isSearch) params.append('q', query.trim())
+
+  const url = `https://api.giphy.com/v1/gifs/${endpoint}?${params}`
+  
+  try {
+    const res = await fetch(url)
+    const json = await res.json()
+    if (!json.data || !Array.isArray(json.data)) return []
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (json.data as any[]).map(g => ({
+      id: g.id as string,
+      url: g.images.original.url as string,
+      preview: g.images.fixed_height_small.url as string,
+    }))
+  } catch (err) {
+    console.error('Giphy fetch error:', err)
+    return []
+  }
 }
 
 const EMOJIS = ['😊', '😂', '🔥', '🎮', '🕹️', '❤️', '👍', '🙌', '🎉', '😢', '😮', '🤔', '😎', '💀', '✨']
@@ -304,6 +315,7 @@ export function FriendsPage() {
   const [showGifPanel, setShowGifPanel] = useState(false)
   const [gifQuery, setGifQuery] = useState('')
   const [gifResults, setGifResults] = useState<any[]>([])
+  const [gifSearching, setGifSearching] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [uploading, setUploading] = useState(false)
   
@@ -347,12 +359,15 @@ export function FriendsPage() {
   // GIF search
   useEffect(() => {
     if (!showGifPanel) return
+    setGifSearching(true)
     const t = setTimeout(async () => {
-      try { setGifResults(await fetchTenorGifs(gifQuery)) }
+      try { setGifResults(await fetchGiphyGifs(gifQuery)) }
       catch { setGifResults([]) }
+      finally { setGifSearching(false) }
     }, 350)
     return () => clearTimeout(t)
   }, [gifQuery, showGifPanel])
+
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault()
@@ -693,16 +708,28 @@ export function FriendsPage() {
                             />
                             <button onClick={() => setShowGifPanel(false)}><X className="w-4 h-4 text-white/40" /></button>
                           </div>
-                          <div className="flex-1 overflow-y-auto p-2 grid grid-cols-4 gap-2 no-scrollbar">
-                            {gifResults.map(g => (
-                              <img 
-                                key={g.id} 
-                                src={g.preview} 
-                                alt="" 
-                                onClick={() => selectGif(g.url)}
-                                className="w-full aspect-video object-cover rounded cursor-pointer hover:scale-105 transition-transform" 
-                              />
-                            ))}
+                          <div className="flex-1 overflow-y-auto p-2 min-h-[200px]">
+                            {gifSearching ? (
+                              <div className="flex items-center justify-center h-full">
+                                <div className="w-8 h-8 border-4 border-[#c77fc7] border-t-transparent rounded-full animate-spin" />
+                              </div>
+                            ) : gifResults.length > 0 ? (
+                              <div className="grid grid-cols-4 gap-2">
+                                {gifResults.map(g => (
+                                  <img 
+                                    key={g.id} 
+                                    src={g.preview} 
+                                    alt="" 
+                                    onClick={() => selectGif(g.url)}
+                                    className="w-full aspect-video object-cover rounded cursor-pointer hover:scale-105 transition-transform bg-white/5" 
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center h-full text-white/20 text-xs font-roboto">
+                                No GIFs found
+                              </div>
+                            )}
                           </div>
                         </motion.div>
                       )}

@@ -22,21 +22,29 @@ const OFFENSES = [
 export function ReportModal({ targetId, targetType, onClose }: Props) {
   const { user } = useAuthStore()
   const { addReport } = useReportsStore()
-  const [selectedOffense, setSelectedOffense] = useState('')
+  const [selectedOffenses, setSelectedOffenses] = useState<string[]>([])
   const [details, setDetails] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubscribed] = useState(false)
 
+  const toggleOffense = (offense: string) => {
+    setSelectedOffenses(prev => 
+      prev.includes(offense) 
+        ? prev.filter(o => o !== offense) 
+        : [...prev, offense]
+    )
+  }
+
   const handleSubmit = async () => {
-    if (!selectedOffense || !user) return
+    if (selectedOffenses.length === 0 || !user) return
     setSubmitting(true)
     
     addReport({
       reporterId: user.id,
       targetId,
       targetType,
-      offense: selectedOffense,
-      details: selectedOffense === 'Other' ? details : undefined
+      offense: selectedOffenses.join(', '),
+      details: selectedOffenses.includes('Other') ? details : undefined
     })
 
     setTimeout(() => {
@@ -45,6 +53,8 @@ export function ReportModal({ targetId, targetType, onClose }: Props) {
       setTimeout(onClose, 2000)
     }, 800)
   }
+
+  const showOther = selectedOffenses.includes('Other')
 
   return (
     <motion.div 
@@ -65,7 +75,7 @@ export function ReportModal({ targetId, targetType, onClose }: Props) {
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/5">
           <div className="flex items-center gap-2 text-red-400">
             <ShieldAlert className="w-5 h-5" />
-            <h2 className="font-roboto font-bold text-white text-lg uppercase tracking-tight">Report {targetType}</h2>
+            <h2 className="font-roboto font-bold text-white text-2xl uppercase tracking-tight">Report {targetType}</h2>
           </div>
           <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
             <X className="w-5 h-5" />
@@ -83,43 +93,51 @@ export function ReportModal({ targetId, targetType, onClose }: Props) {
                 className="flex flex-col gap-5"
               >
                 <p className="font-roboto text-white/60 text-sm leading-relaxed">
-                  Help us understand what's happening. Why are you reporting this {targetType}?
+                  Help us understand what's happening. Select all that apply for this {targetType}:
                 </p>
 
-                <div className="grid grid-cols-1 gap-2">
-                  {OFFENSES.map(offense => (
-                    <button
-                      key={offense}
-                      onClick={() => setSelectedOffense(offense)}
-                      className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all text-sm font-roboto ${
-                        selectedOffense === offense 
-                          ? 'bg-[#773877]/20 border-[#773877] text-white shadow-lg' 
-                          : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'
-                      }`}
-                    >
-                      {offense}
-                      {selectedOffense === offense && <div className="w-2 h-2 bg-[#c77fc7] rounded-full shadow-[0_0_8px_#c77fc7]" />}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-2 gap-2">
+                  {OFFENSES.map(offense => {
+                    const isSelected = selectedOffenses.includes(offense)
+                    return (
+                      <button
+                        key={offense}
+                        onClick={() => toggleOffense(offense)}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-sm font-roboto text-left ${
+                          isSelected 
+                            ? 'bg-[#773877]/20 border-[#773877] text-white shadow-lg' 
+                            : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'
+                        }`}
+                      >
+                        <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${
+                          isSelected ? 'bg-[#773877] border-[#773877]' : 'border-white/20'
+                        }`}>
+                          {isSelected && <div className="w-2 h-2 bg-white rounded-sm" />}
+                        </div>
+                        {offense}
+                      </button>
+                    )
+                  })}
                 </div>
 
-                {selectedOffense === 'Other' && (
+                {showOther && (
                   <motion.div 
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     className="overflow-hidden"
                   >
+                    <p className="text-[13px] text-white/40 font-roboto uppercase tracking-wider mb-2 ml-1">Additional details</p>
                     <textarea
                       placeholder="Please provide more details..."
                       value={details}
                       onChange={e => setDetails(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm font-roboto outline-none focus:border-[#773877] resize-none"
+                      className="w-full h-20 bg-white/5 border border-white/10 rounded-md p-3 text-white text-sm font-roboto outline-none focus:border-[#773877] resize-none"
                       rows={3}
                     />
                   </motion.div>
                 )}
 
-                <div className="flex gap-3 mt-2">
+                <div className="flex gap-5 mt-2">
                   <button 
                     onClick={onClose}
                     className="flex-1 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 font-roboto font-medium transition-colors"
@@ -128,8 +146,8 @@ export function ReportModal({ targetId, targetType, onClose }: Props) {
                   </button>
                   <button 
                     onClick={handleSubmit}
-                    disabled={!selectedOffense || submitting}
-                    className="flex-[2] px-4 py-3 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-30 disabled:grayscale text-white font-roboto font-bold transition-all shadow-xl flex items-center justify-center gap-2"
+                    disabled={selectedOffenses.length === 0 || submitting}
+                    className="flex-[2] px-3 py-3 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-30 disabled:grayscale text-white font-roboto font-bold transition-all shadow-xl flex items-center justify-center gap-2"
                   >
                     {submitting ? (
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

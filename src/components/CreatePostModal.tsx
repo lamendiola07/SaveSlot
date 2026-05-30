@@ -7,36 +7,44 @@ import type { Game } from '../types/game'
 import { motion } from 'framer-motion'
 
 interface Props {
-// ... (rest of imports and interfaces same)
-
   onClose: () => void
   pfpUrl: string | null
 }
 
 interface GifResult { id: string; url: string; preview: string }
 
-// Tenor public demo key — replace with VITE_TENOR_API_KEY for production
-const TENOR_KEY = import.meta.env.VITE_TENOR_API_KEY || 'LIVDSRZULELA'
+const GIPHY_KEY = import.meta.env.VITE_GIPHY_API_KEY
 
-async function fetchTenorGifs(query: string): Promise<GifResult[]> {
+async function fetchGiphyGifs(query: string): Promise<GifResult[]> {
+  if (!GIPHY_KEY) return []
+  
   const params = new URLSearchParams({
-    key: TENOR_KEY,
-    limit: '20',
-    contentfilter: 'medium',
-    media_filter: 'tinygif,gif',
+    api_key: GIPHY_KEY,
+    limit: '24',
+    rating: 'g',
   })
-  const base = 'https://tenor.googleapis.com/v2'
-  const url = query.trim()
-    ? `${base}/search?${params}&q=${encodeURIComponent(query.trim())}`
-    : `${base}/featured?${params}`
-  const res = await fetch(url)
-  const json = await res.json()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (json.results as any[]).map(g => ({
-    id: g.id as string,
-    url: g.media_formats.gif.url as string,
-    preview: g.media_formats.tinygif.url as string,
-  }))
+  
+  const isSearch = query.trim().length > 0
+  const endpoint = isSearch ? 'search' : 'trending'
+  if (isSearch) params.append('q', query.trim())
+
+  const url = `https://api.giphy.com/v1/gifs/${endpoint}?${params}`
+  
+  try {
+    const res = await fetch(url)
+    const json = await res.json()
+    if (!json.data || !Array.isArray(json.data)) return []
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (json.data as any[]).map(g => ({
+      id: g.id as string,
+      url: g.images.original.url as string,
+      preview: g.images.fixed_height_small.url as string,
+    }))
+  } catch (err) {
+    console.error('Giphy fetch error:', err)
+    return []
+  }
 }
 
 function readAsDataURL(file: File): Promise<string> {
@@ -70,7 +78,7 @@ export function CreatePostModal({ onClose, pfpUrl }: Props) {
   const [starRating, setStarRating] = useState(0)
   const [hoverStar, setHoverStar] = useState(0)
 
-  // GIF (Tenor)
+  // GIF selector
   const [showGifPanel, setShowGifPanel] = useState(false)
   const [gifQuery, setGifQuery] = useState('')
   const [gifResults, setGifResults] = useState<GifResult[]>([])
@@ -96,7 +104,7 @@ export function CreatePostModal({ onClose, pfpUrl }: Props) {
     if (!showGifPanel) return
     setGifSearching(true)
     const t = setTimeout(async () => {
-      try { setGifResults(await fetchTenorGifs(gifQuery)) }
+      try { setGifResults(await fetchGiphyGifs(gifQuery)) }
       catch { setGifResults([]) }
       finally { setGifSearching(false) }
     }, 350)
@@ -183,7 +191,7 @@ export function CreatePostModal({ onClose, pfpUrl }: Props) {
         </div>
 
         {/* Scrollable body */}
-        <div className="overflow-y-auto max-h-70vh]">
+        <div className="overflow-y-auto max-h-[70vh]">
 
           {/* User row */}
           <div className="flex items-center gap-3 px-4 pt-4">
@@ -324,7 +332,7 @@ export function CreatePostModal({ onClose, pfpUrl }: Props) {
             </div>
           )}
 
-          {/* GIF panel — Tenor */}
+          {/* GIF selector panel */}
           {showGifPanel && (
             <div className="px-4 pb-3">
               <div className="relative flex items-center mb-2">
@@ -334,7 +342,7 @@ export function CreatePostModal({ onClose, pfpUrl }: Props) {
                 />
               </div>
               <p className="font-roboto text-white/25 text-[10px] mb-2 pl-1">
-                {gifQuery.trim() ? 'Results' : 'Trending'} · Powered by Tenor
+                {gifQuery.trim() ? 'Results' : 'Trending'} · Powered by GIPHY
               </p>
               {gifSearching ? (
                 <div className="flex justify-center py-6">

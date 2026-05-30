@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import {
   User, Heart, LayoutGrid, Calendar, MoreHorizontal, Pencil,
-  Trash2, Gamepad2, Camera, Star, MessageCircle, Repeat2, CheckCircle2,
+  Trash2, Gamepad2, Camera, Star, MessageCircle, CheckCircle2,
   ShieldAlert
 } from 'lucide-react'
 import { AnimatePresence } from 'framer-motion'
@@ -37,7 +37,7 @@ function ratingColor(score: number) {
 export function UserProfilePage() {
   const { user: currentUser, isAuthenticated } = useAuthStore()
   const { userId } = useParams<{ userId?: string }>()
-  const { posts, likePost, editPost, deletePost, addComment, editComment, deleteComment, repostPost } = usePostsStore()
+  const { posts, likePost, editPost, deletePost, addComment, editComment, deleteComment} = usePostsStore()
   const { playedGames, fetchPlayedGames, loading: gamesLoading } = usePlayedGamesStore()
   const navigate = useNavigate()
 
@@ -291,8 +291,8 @@ export function UserProfilePage() {
                     const isMenuOpen = openMenuId === post.id
                     const commentsOpen = openCommentsId === post.id
 
-                    const leftPhoto = post.taggedGame?.cover
-                      ?? post.gifUrl
+                    const leftPhoto = post.gifUrl
+                      ?? post.taggedGame?.cover
                       ?? (post.mediaType === 'image' ? post.mediaUrl : undefined)
 
                     return (
@@ -503,7 +503,7 @@ export function UserProfilePage() {
                                                     onClick={() => { setReportTarget({ id: c.id, type: 'comment' }); setOpenCommentMenuId(null); }}
                                                     className="flex items-center gap-2 w-full px-3 py-1.5 text-white/70 hover:text-red-400 hover:bg-white/5 transition-colors text-[11px] font-roboto"
                                                   >
-                                                    <ShieldAlert className="w-3 h-3 text-red-400/70" />Report Comment
+                                                    <ShieldAlert className="w-4 h-4 text-red-400/70" />Report
                                                   </button>
                                                 )}
                                               </div>
